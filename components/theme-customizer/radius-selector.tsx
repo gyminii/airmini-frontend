@@ -9,42 +9,48 @@ export function ThemeRadiusSelector() {
 	const { theme, setTheme } = useThemeConfig();
 
 	return (
-		<div className="flex flex-col gap-4">
-			<Label htmlFor="roundedCorner">Radius:</Label>
+		<div className="flex flex-col gap-2">
+			<Label htmlFor="radius">Radius:</Label>
 			<ToggleGroup
 				value={theme.radius}
 				type="single"
-				onValueChange={(value) => setTheme({ ...theme, radius: value })}
 				className="*:border-input w-full gap-3 *:rounded-md *:border"
+				onValueChange={(value) => {
+					if (value) setTheme({ ...theme, radius: value });
+				}}
 			>
-				<ToggleGroupItem variant="outline" value="none">
-					<BanIcon />
+				<ToggleGroupItem
+					value="none"
+					variant="outline"
+					className="text-xs data-[variant=outline]:border-l"
+				>
+					<BanIcon className="size-4" />
 				</ToggleGroupItem>
 				<ToggleGroupItem
-					variant="outline"
 					value="sm"
-					className="text-xs data-[variant=outline]:border-l-1"
+					variant="outline"
+					className="text-xs data-[variant=outline]:border-l"
 				>
 					SM
 				</ToggleGroupItem>
 				<ToggleGroupItem
+					value="default"
 					variant="outline"
-					value="md"
-					className="text-xs data-[variant=outline]:border-l-1"
+					className="text-xs data-[variant=outline]:border-l"
 				>
 					MD
 				</ToggleGroupItem>
 				<ToggleGroupItem
-					variant="outline"
 					value="lg"
-					className="text-xs data-[variant=outline]:border-l-1"
+					variant="outline"
+					className="text-xs data-[variant=outline]:border-l"
 				>
 					LG
 				</ToggleGroupItem>
 				<ToggleGroupItem
-					variant="outline"
 					value="xl"
-					className="text-xs data-[variant=outline]:border-l-1"
+					variant="outline"
+					className="text-xs data-[variant=outline]:border-l"
 				>
 					XL
 				</ToggleGroupItem>

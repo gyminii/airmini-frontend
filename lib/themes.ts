@@ -55,4 +55,9 @@ export const THEMES = [
 		value: "lavender-dream",
 		colors: ["oklch(0.71 0.16 293.54)"],
 	},
+	{
+		name: "Neon Lab",
+		value: "neon-lab",
+		colors: ["oklch(0.6056 0.2189 292.7172)"],
+	},
 ];

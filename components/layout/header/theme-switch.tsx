@@ -1,31 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { MoonIcon, SunIcon } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 
 export default function ThemeSwitch() {
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+	const { theme, setTheme } = useTheme();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  return (
-    <Button
-      size="icon"
-      variant="ghost"
-      className="relative"
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-      {theme === "light" ? <SunIcon /> : <MoonIcon />}
-      <span className="sr-only">Toggle theme</span>
-    </Button>
-  );
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+					className="float-trigger flex items-center justify-center"
+				>
+					{theme === "light" ? (
+						<SunIcon className="size-5" />
+					) : (
+						<MoonIcon className="size-5" />
+					)}
+					<span className="sr-only">Toggle theme</span>
+				</button>
+			</TooltipTrigger>
+			<TooltipContent>
+				<p>Theme</p>
+			</TooltipContent>
+		</Tooltip>
+	);
 }

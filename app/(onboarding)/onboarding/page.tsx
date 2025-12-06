@@ -1,7 +1,6 @@
 "use client";
 
 import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
-import { Hyperlink } from "@/components/ui/hyperlink";
 import { VercelCard } from "@/components/ui/vercel-card";
 
 export default function OnboardingPage() {

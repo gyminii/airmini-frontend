@@ -2,20 +2,24 @@ import { Metadata } from "next";
 import { generateMeta } from "@/lib/utils";
 import AIChatSidebar from "@/components/chat-interface/ai-chat-sidebar";
 import AIChatInterface from "@/components/chat-interface/ai-chat-interface";
+import { getChats } from "@/lib/actions/chat";
+import { auth } from "@clerk/nextjs/server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	return generateMeta({
-		title: "AI Chat V2",
-		description:
-			"AI chatbot is an app ui template that allows users to interact with an AI for messaging and assistance. Built with shadcn/ui, Next.js and Tailwind CSS.",
-		canonical: "/apps/ai-chat-v2",
+		title: "Chat | Airmini",
+		description: "AI-powered travel assistant chat",
+		canonical: "/chat",
 	});
 }
 
-export default function Page() {
+export default async function ChatPage() {
+	const initialChats = await getChats();
+	const { userId } = await auth();
+	const isAuthenticated = !!userId;
 	return (
 		<div className="relative flex h-full rounded-md lg:border">
-			<AIChatSidebar />
+			{isAuthenticated && <AIChatSidebar initialChats={initialChats} />}
 			<div className="flex w-full grow flex-col">
 				<AIChatInterface />
 			</div>

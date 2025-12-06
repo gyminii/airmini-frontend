@@ -1,9 +1,11 @@
 import { ActiveThemeProvider } from "@/components/active-theme";
+import { FloatNav } from "@/components/floating-nav";
+import { ClerkProvider } from "@/components/providers/clerk-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { fontVariables } from "@/lib/fonts";
 import GoogleAnalyticsInit from "@/lib/ga";
 import { DEFAULT_THEME, ThemeType } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { cookies } from "next/headers";
@@ -64,7 +66,7 @@ export default async function RootLayout({
 						disableTransitionOnChange
 					>
 						<ActiveThemeProvider initialTheme={themeSettings}>
-							{children}
+							<QueryProvider>{children}</QueryProvider>
 							<Toaster position="top-center" richColors />
 							<NextTopLoader
 								color="var(--primary)"
@@ -75,6 +77,7 @@ export default async function RootLayout({
 							{process.env.NODE_ENV === "production" ? (
 								<GoogleAnalyticsInit />
 							) : null}
+							<FloatNav />
 						</ActiveThemeProvider>
 					</ThemeProvider>
 				</body>

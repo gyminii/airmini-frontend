@@ -1,6 +1,3 @@
-"use client";
-
-import { useThemeConfig } from "@/components/active-theme";
 import {
 	ColorModeSelector,
 	ContentLayoutSelector,
@@ -9,43 +6,41 @@ import {
 	ThemeRadiusSelector,
 	ThemeScaleSelector,
 } from "@/components/theme-customizer/index";
-import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandGroup,
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { useIsMobile } from "@/hooks/use-mobile";
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Settings } from "lucide-react";
-import { SidebarToggle } from "./sidebar-toggle";
 
 export function ThemeCustomizerPanel() {
-	const { theme } = useThemeConfig();
-	const isMobile = useIsMobile();
-
 	return (
-		<Popover>
-			<PopoverTrigger asChild>
-				<Button size="icon" variant="ghost">
-					<Settings className="animate-tada" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent
-				className="w-80 p-0 h-full"
-				align={isMobile ? "center" : "end"}
-			>
+		<Dialog>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DialogTrigger asChild>
+						<button className="float-trigger flex items-center justify-center">
+							<Settings className="size-5" />
+							<span className="sr-only">Customize theme</span>
+						</button>
+					</DialogTrigger>
+				</TooltipTrigger>
+				<TooltipContent>
+					<p>Customize</p>
+				</TooltipContent>
+			</Tooltip>
+			<DialogContent className="max-w-2xl max-h-[80vh] p-0">
 				<Command className="rounded-lg border-none shadow-none">
-					{/* <CommandInput placeholder="Search settings..." /> */}
-					<CommandList>
-						{/* <CommandEmpty>No settings found.</CommandEmpty> */}
+					<CommandList className="max-h-[70vh]">
 						<CommandGroup heading="Appearance">
-							<div className="p-3 space-y-4">
+							<div className="p-4 space-y-4">
 								<PresetSelector />
 								<ThemeScaleSelector />
 								<ThemeRadiusSelector />
@@ -53,20 +48,14 @@ export function ThemeCustomizerPanel() {
 								<ContentLayoutSelector />
 							</div>
 						</CommandGroup>
+
 						<CommandSeparator />
-						<CommandGroup heading="Layout">
-							<div className="p-3 space-y-4">
-								<SidebarToggle />
-								{/* {theme.isSidebar && <SidebarModeSelector />} */}
-							</div>
-						</CommandGroup>
-						<CommandSeparator />
-						<div className="p-3">
+						<div className="p-4">
 							<ResetThemeButton />
 						</div>
 					</CommandList>
 				</Command>
-			</PopoverContent>
-		</Popover>
+			</DialogContent>
+		</Dialog>
 	);
 }

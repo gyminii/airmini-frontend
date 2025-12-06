@@ -180,6 +180,14 @@
 	scrollbar-color: var(--border) transparent;
 }
 
+.float-trigger {
+	@apply text-foreground flex cursor-pointer flex-row items-center justify-center rounded-full border border-transparent px-4 py-2 text-sm font-medium outline-0;
+}
+
+.float-trigger:hover {
+	@apply bg-primary border-border border text-white;
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

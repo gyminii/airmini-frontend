@@ -12,7 +12,12 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import {
 	Tooltip,
 	TooltipContent,
@@ -36,6 +41,7 @@ export function ThemeCustomizerPanel() {
 					<p>Customize</p>
 				</TooltipContent>
 			</Tooltip>
+			<DialogTitle className="sr-only">Custimization panel</DialogTitle>
 			<DialogContent className="max-w-2xl max-h-[80vh] p-0">
 				<Command className="rounded-lg border-none shadow-none">
 					<CommandList className="max-h-[70vh]">

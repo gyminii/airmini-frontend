@@ -7,7 +7,6 @@ export default async function AuthLayout({
 }>) {
 	return (
 		<div className="h-screen overflow-hidden">
-			{/* <Sidebar /> */}
 			<main className="h-full overflow-y-auto">
 				<div className="h-full p-4 xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
 					{children}

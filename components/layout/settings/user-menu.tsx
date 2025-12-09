@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	BadgeCheck,
-	Bell,
-	ChevronRightIcon,
-	CreditCard,
-	LogOut,
-	User as UserIcon,
-} from "lucide-react";
+import { BadgeCheck, Bell, CreditCard, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -17,15 +10,19 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUser, useClerk } from "@clerk/nextjs";
 import { useCredits } from "@/hooks/use-credits";
+import { useClerk, useUser } from "@clerk/nextjs";
 
 export default function UserMenu() {
 	const { user } = useUser();
@@ -61,6 +58,7 @@ export default function UserMenu() {
 					<p>User</p>
 				</TooltipContent>
 			</Tooltip>
+			<DialogTitle className="sr-only">User</DialogTitle>
 			<DialogContent className="max-w-md  p-0">
 				<Command className="h-full flex-1 rounded-lg border-none shadow-none">
 					<CommandList className="h-full">
@@ -78,22 +76,6 @@ export default function UserMenu() {
 								</div>
 							</div>
 						</div>
-						<CommandSeparator />
-
-						<CommandGroup className="max-h-[85vh]">
-							<CommandItem>
-								<BadgeCheck className="mr-2 size-4" />
-								Account
-							</CommandItem>
-							<CommandItem>
-								<CreditCard className="mr-2 size-4" />
-								Billing
-							</CommandItem>
-							<CommandItem>
-								<Bell className="mr-2 size-4" />
-								Notifications
-							</CommandItem>
-						</CommandGroup>
 						<CommandSeparator />
 						<CommandGroup>
 							<CommandItem onSelect={handleSignOut}>

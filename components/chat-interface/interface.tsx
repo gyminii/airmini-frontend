@@ -1,26 +1,37 @@
 "use client";
 
+import {
+	ChainOfThought,
+	ChainOfThoughtStep,
+	ChainOfThoughtTrigger,
+} from "@/components/ui/chain-of-thought";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { CopyIcon } from "@radix-ui/react-icons";
+import { DefaultChatTransport } from "ai";
 import Lottie from "lottie-react";
 import {
+	TripContext,
+	TripContextDialog,
+	TripContextBadge,
+} from "./trip-context-dialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
 	ArrowUpIcon,
-	Plane,
+	BookOpen,
+	Brain,
+	CheckCircle2,
 	FileUser,
-	Hotel,
 	Globe,
-	MicIcon,
-	Paperclip,
+	Hotel,
+	Loader2,
+	Plane,
+	Shield,
+	Sparkles,
 	SquareIcon,
-	X,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { ChatContainer } from "@/components/ui/custom/prompt/chat-container";
@@ -41,13 +52,14 @@ import {
 import { PromptScrollButton } from "@/components/ui/custom/prompt/scroll-button";
 import { Suggestion } from "@/components/ui/custom/prompt/suggestion";
 
-import planeAnimation from "../../data/Loading 40 _ Paperplane.json";
-import { AIUpgradePricingModal } from "./ai-upgrade-modal";
 import { useCredits } from "@/hooks/use-credits";
-import { useChatMessages, convertToUIMessages } from "@/hooks/use-chat";
+import { useSafeUser } from "@/hooks/use-safe-user";
+import { invalidateChats } from "@/lib/actions/chat";
 import { toast } from "sonner";
-import type { ChatSummary } from "@/types/chat";
-import { useClaimConversation } from "@/hooks/use-chat";
+import planeAnimation from "../../data/Loading 40 _ Paperplane.json";
+import { AirminiUIMessage } from "../../types/chat-message";
+import { ReadMeModal } from "./readme-modal";
+
 const suggestionGroups = [
 	{
 		icon: FileUser,
@@ -95,45 +107,110 @@ const suggestionGroups = [
 	},
 ];
 
-export default function AIChatInterface() {
+// -----------------------------
+// STRICT TYPES
+// -----------------------------
+type TextPart = {
+	type: "text";
+	text: string;
+};
+
+type ThoughtPhase =
+	| "analysis"
+	| "search"
+	| "knowledge"
+	| "visa"
+	| "validation"
+	| "other";
+
+type ThoughtData = {
+	content: string;
+	phase?: ThoughtPhase;
+	status: "pending" | "complete";
+};
+
+type ThoughtPart = {
+	type: "data-thought";
+	data: ThoughtData;
+};
+
+type UIPart = TextPart | ThoughtPart;
+
+type ThoughtItem = {
+	id: string;
+	content: string;
+	phase: ThoughtPhase;
+	status: "pending" | "complete";
+};
+
+// -----------------------------
+// THOUGHT PHASE ICONS
+// -----------------------------
+const THOUGHT_PHASE_ICONS: Record<ThoughtPhase, React.ReactNode> = {
+	analysis: <Brain className="size-4" />,
+	search: <Globe className="size-4" />,
+	knowledge: <BookOpen className="size-4" />,
+	visa: <Shield className="size-4" />,
+	validation: <CheckCircle2 className="size-4" />,
+	other: <Sparkles className="size-4" />,
+};
+
+function getThoughtIcon(phase: ThoughtPhase): React.ReactNode {
+	return THOUGHT_PHASE_ICONS[phase] || THOUGHT_PHASE_ICONS.other;
+}
+
+// -----------------------------
+// THOUGHT MODE ENUM
+// -----------------------------
+const THOUGHT_RENDER_MODE = {
+	inline_after_text: "inline_after_text",
+	inline_before_text: "inline_before_text",
+	grouped_above: "grouped_above",
+	grouped_below: "grouped_below",
+} as const;
+
+type ThoughtRenderMode = keyof typeof THOUGHT_RENDER_MODE;
+
+const CURRENT_MODE: ThoughtRenderMode = "grouped_above";
+
+function extractThoughtSteps(parts: UIPart[]): ThoughtItem[] {
+	return parts
+		.filter((p): p is ThoughtPart => p.type === "data-thought")
+		.map((p, i) => ({
+			id: `thought-${i}`,
+			content: p.data.content,
+			phase: p.data.phase || "other",
+			status: p.data.status,
+		}));
+}
+
+function extractTextSegments(parts: UIPart[]): string[] {
+	return parts
+		.filter((p): p is TextPart => p.type === "text")
+		.map((p) => p.text);
+}
+
+export default function Interface({
+	isNewChat,
+	chatData,
+}: {
+	chatData: { chat_id: string; messages: AirminiUIMessage[] };
+	isNewChat?: boolean;
+}) {
+	const { chat_id } = chatData;
 	const [prompt, setPrompt] = useState("");
-	const [files, setFiles] = useState<File[]>([]);
-	const uploadInputRef = useRef<HTMLInputElement>(null);
 	const [activeCategory, setActiveCategory] = useState("");
 	const containerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
+	const { user } = useSafeUser();
 
-	const router = useRouter();
-	const params = useParams<{ chat_id?: string[] }>();
-	const queryClient = useQueryClient();
-	const { isSignedIn, isLoaded } = useAuth();
-	const claimConversation = useClaimConversation();
-	const hasClaimedRef = useRef(false);
+	const userName = user?.fullName || user?.firstName;
 
-	const { hasCredits, remainingCredits, incrementMessageCount, isGuest } =
-		useCredits();
-
-	// Get chat_id from catch-all route
-	const chatIdFromUrl = params?.chat_id?.[0];
-
+	const { hasCredits, remainingCredits, isGuest } = useCredits();
 	const [isStreaming, setIsStreaming] = useState(false);
-	const streamingChatIdRef = useRef<string | null>(null);
-	const hasRedirectedRef = useRef(false);
 
-	// The effective chat ID for useChat - prioritize streaming ID during active stream
-	const effectiveChatId = chatIdFromUrl ?? "new";
+	const [tripContext, setTripContext] = useState<TripContext | null>(null);
 
-	// Fetch existing messages for this chat
-	const { data: existingMessages, isLoading: isLoadingMessages } =
-		useChatMessages(chatIdFromUrl);
-
-	// Convert to UIMessage format for initial messages
-	const initialMessages = useMemo(() => {
-		if (!existingMessages || existingMessages.length === 0) return undefined;
-		return convertToUIMessages(existingMessages);
-	}, [existingMessages]);
-
-	// Memoize transport
 	const transport = useMemo(
 		() =>
 			new DefaultChatTransport({
@@ -142,46 +219,13 @@ export default function AIChatInterface() {
 		[]
 	);
 
-	const {
-		messages: chatMessages,
-		sendMessage,
-		setMessages,
-	} = useChat({
-		id: effectiveChatId,
+	const { messages: chatMessages, sendMessage } = useChat({
+		id: chat_id,
+		messages: chatData.messages,
 		transport,
-		onData: (dataPart) => {
-			console.log("Received data part:", dataPart);
-
-			if (dataPart.type === "data-metadata" && !hasRedirectedRef.current) {
-				const { chatId: newChatId, title } = dataPart.data as {
-					chatId: string;
-					title: string;
-				};
-
-				if (newChatId && !chatIdFromUrl) {
-					hasRedirectedRef.current = true;
-
-					// Store for later, but don't change effectiveChatId yet
-					streamingChatIdRef.current = newChatId;
-
-					// Add new chat to sidebar
-					const newChat: ChatSummary = {
-						id: newChatId,
-						title: title || "New Chat",
-						created_at: new Date().toISOString(),
-					};
-
-					queryClient.setQueryData<ChatSummary[]>(["chats"], (old = []) => {
-						if (old.some((chat) => chat.id === newChatId)) return old;
-						return [newChat, ...old];
-					});
-
-					// Update URL
-					window.history.replaceState(null, "", `/chat/${newChatId}`);
-				}
-			}
-		},
-		onFinish: () => {
+		onFinish: async () => {
+			// Revalidate server cache instead of React Query
+			await invalidateChats();
 			setIsStreaming(false);
 		},
 		onError: (err) => {
@@ -191,72 +235,13 @@ export default function AIChatInterface() {
 		},
 	});
 
-	// Set initial messages when they load (for existing chats)
-	useEffect(() => {
-		if (initialMessages && initialMessages.length > 0 && chatIdFromUrl) {
-			setMessages(initialMessages);
-		}
-	}, [initialMessages, setMessages, chatIdFromUrl]);
-
-	const previousUrlRef = useRef(chatIdFromUrl);
-	useEffect(() => {
-		const urlChanged = previousUrlRef.current !== chatIdFromUrl;
-
-		if (urlChanged && !hasRedirectedRef.current) {
-			streamingChatIdRef.current = null;
-
-			if (!chatIdFromUrl) {
-				setMessages([]);
-			}
-		}
-
-		if (urlChanged) {
-			hasRedirectedRef.current = false;
-		}
-
-		previousUrlRef.current = chatIdFromUrl;
-	}, [chatIdFromUrl, setMessages]);
-
-	// Claim conversation when user signs in with existing messages
-	useEffect(() => {
-		const claimMessages = async () => {
-			if (
-				isLoaded &&
-				isSignedIn &&
-				!chatIdFromUrl &&
-				chatMessages.length > 0 &&
-				!hasClaimedRef.current &&
-				!isStreaming
-			) {
-				hasClaimedRef.current = true;
-
-				try {
-					const messagesToClaim = chatMessages.map((msg) => ({
-						role: msg.role as "user" | "assistant",
-						content: msg.parts
-							.filter((p) => p.type === "text")
-							.map((p) => (p.type === "text" ? p.text : ""))
-							.join(""),
-					}));
-
-					const newChat = await claimConversation.mutateAsync(messagesToClaim);
-					router.replace(`/chat/${newChat.id}`);
-				} catch (error) {
-					console.error("Failed to claim conversation:", error);
-				}
-			}
-		};
-
-		claimMessages();
-	}, [isLoaded, isSignedIn, chatIdFromUrl, chatMessages.length, isStreaming]);
-	const isFirstResponse = chatMessages.length === 0 && !isLoadingMessages;
+	const isFirstResponse = chatMessages.length === 0;
 	const activeCategoryData = suggestionGroups.find(
 		(group) => group.label === activeCategory
 	);
 	const showCategorySuggestions = activeCategory !== "";
 
 	const handleSendMessage = async () => {
-		console.log("Sending message with effectiveChatId:", effectiveChatId);
 		if (!hasCredits) {
 			toast.error(
 				"You've reached your free message limit. Sign up to continue!"
@@ -266,60 +251,31 @@ export default function AIChatInterface() {
 
 		if (!prompt.trim() || isStreaming) return;
 
-		incrementMessageCount();
+		if (isNewChat) {
+			window.history.replaceState(null, "", `/chat/${chat_id}`);
+		}
+
 		const messageContent = prompt;
+
 		setPrompt("");
-		setFiles([]);
 		setIsStreaming(true);
-		hasRedirectedRef.current = false;
 
 		try {
-			await sendMessage({ text: messageContent });
-		} catch (e) {
-			console.error(e);
-			toast.error("Failed to send message. Please try again.");
+			await sendMessage(
+				{
+					text: messageContent,
+				},
+				{
+					body: tripContext ? { tripContext } : undefined,
+				}
+			);
+		} catch (err) {
+			console.error("sendMessage error:", err);
+			toast.error("Failed to send message");
 			setIsStreaming(false);
 		}
 	};
 
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files) {
-			const newFiles = Array.from(event.target.files);
-			setFiles((prev) => [...prev, ...newFiles]);
-		}
-	};
-
-	const handleRemoveFile = (index: number) => {
-		setFiles((prev) => prev.filter((_, i) => i !== index));
-		if (uploadInputRef?.current) {
-			uploadInputRef.current.value = "";
-		}
-	};
-
-	const FileListItem = ({
-		file,
-		dismiss = true,
-		index,
-	}: {
-		file: File;
-		dismiss?: boolean;
-		index: number;
-	}) => (
-		<div className="bg-muted flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
-			<Paperclip className="size-4" />
-			<span className="max-w-[120px] truncate">{file.name}</span>
-			{dismiss && (
-				<button
-					onClick={() => handleRemoveFile(index)}
-					className="hover:bg-secondary/50 rounded-full p-1"
-				>
-					<X className="size-4" />
-				</button>
-			)}
-		</div>
-	);
-
-	// Auto-scroll to bottom
 	useEffect(() => {
 		if (!containerRef.current || !bottomRef.current) return;
 		containerRef.current.scrollTo({
@@ -328,12 +284,30 @@ export default function AIChatInterface() {
 		});
 	}, [chatMessages.length]);
 
-	// Show loading state while fetching messages for existing chat
-	if (isLoadingMessages && chatIdFromUrl && isSignedIn) {
+	function renderThoughts(
+		thoughts: ThoughtItem[],
+		isCurrentlyStreaming: boolean
+	) {
+		if (!thoughts.length) return null;
+
 		return (
-			<div className="flex h-full items-center justify-center">
-				<PromptLoader variant="pulse-dot" />
-			</div>
+			<ChainOfThought>
+				{thoughts.map((t) => (
+					<ChainOfThoughtStep key={t.id}>
+						<ChainOfThoughtTrigger
+							leftIcon={
+								isCurrentlyStreaming && t.status === "pending" ? (
+									<Loader2 className="size-4 animate-spin" />
+								) : (
+									getThoughtIcon(t.phase)
+								)
+							}
+						>
+							{t.content}
+						</ChainOfThoughtTrigger>
+					</ChainOfThoughtStep>
+				))}
+			</ChainOfThought>
 		);
 	}
 
@@ -347,17 +321,17 @@ export default function AIChatInterface() {
 				ref={containerRef}
 				scrollToRef={bottomRef}
 			>
-				{chatMessages.map((message) => {
+				{chatMessages.map((message, messageIndex) => {
 					const isAssistant = message.role === "assistant";
+					const isLastMessage = messageIndex === chatMessages.length - 1;
 
 					const textContent = message.parts
 						.filter((part) => part.type === "text")
 						.map((part) => (part.type === "text" ? part.text : ""))
 						.join("");
-
 					return (
 						<Message
-							key={message.id}
+							key={`${message.role}_${messageIndex}`}
 							className={isAssistant ? "justify-start" : "justify-end"}
 						>
 							<div
@@ -366,10 +340,82 @@ export default function AIChatInterface() {
 								})}
 							>
 								{isAssistant ? (
-									<div className="space-y-2">
-										<div className="bg-muted text-foreground prose rounded-lg border p-4">
-											<Markdown className={"space-y-4"}>{textContent}</Markdown>
-										</div>
+									<div className="space-y-3">
+										{(() => {
+											const parts = message.parts as UIPart[];
+											const textSegments = extractTextSegments(parts);
+											const thoughts = extractThoughtSteps(parts);
+											const isMessageStreaming = isStreaming && isLastMessage;
+
+											switch (CURRENT_MODE) {
+												case "inline_before_text":
+													return (
+														<>
+															{renderThoughts(thoughts, isMessageStreaming)}
+															{textSegments.map((text, i) => (
+																<div
+																	key={i}
+																	className="bg-muted text-foreground prose rounded-lg border p-4"
+																>
+																	<Markdown className="space-y-4">
+																		{text}
+																	</Markdown>
+																</div>
+															))}
+														</>
+													);
+
+												case "inline_after_text":
+													return (
+														<>
+															{textSegments.map((text, i) => (
+																<div
+																	key={i}
+																	className="bg-muted text-foreground prose rounded-lg border p-4"
+																>
+																	<Markdown className="space-y-4">
+																		{text}
+																	</Markdown>
+																</div>
+															))}
+															{renderThoughts(thoughts, isMessageStreaming)}
+														</>
+													);
+
+												case "grouped_above":
+													return (
+														<>
+															{renderThoughts(thoughts, isMessageStreaming)}
+
+															{textSegments.length > 0 && (
+																<div className="bg-muted text-foreground prose rounded-lg border p-4">
+																	<Markdown className="space-y-4">
+																		{textSegments.join("")}
+																	</Markdown>
+																</div>
+															)}
+														</>
+													);
+
+												case "grouped_below":
+													return (
+														<>
+															{textSegments.length > 0 && (
+																<div className="bg-muted text-foreground prose rounded-lg border p-4">
+																	<Markdown className="space-y-4">
+																		{textSegments.join("")}
+																	</Markdown>
+																</div>
+															)}
+															{renderThoughts(thoughts, isMessageStreaming)}
+														</>
+													);
+
+												default:
+													return null;
+											}
+										})()}
+
 										<MessageActions className="flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
 											<MessageAction tooltip="Copy" delayDuration={100}>
 												<Button
@@ -396,11 +442,13 @@ export default function AIChatInterface() {
 					);
 				})}
 
-				{isStreaming && (
-					<div className="ps-2">
-						<PromptLoader variant="pulse-dot" />
-					</div>
-				)}
+				{isStreaming &&
+					(chatMessages.length === 0 ||
+						chatMessages[chatMessages.length - 1]?.role === "user") && (
+						<div className="ps-2">
+							<PromptLoader variant="pulse-dot" />
+						</div>
+					)}
 
 				<div ref={bottomRef} />
 			</ChatContainer>
@@ -425,7 +473,9 @@ export default function AIChatInterface() {
 					</div>
 
 					<h1 className="text-center text-2xl leading-normal font-medium lg:text-4xl">
-						Good Morning, <span className="text-primary">Name</span> <br />
+						Good Morning
+						{user && <span className="text-primary">{` ${userName}`}</span>}
+						<br />
 						How Can I
 						<span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
 							{" "}
@@ -445,11 +495,11 @@ export default function AIChatInterface() {
 					) : (
 						<>
 							Use our faster AI on Pro Plan <span>&bull;</span>
-							<AIUpgradePricingModal>
+							<ReadMeModal>
 								<Link href="#" className="hover:underline">
 									Upgrade
 								</Link>
-							</AIUpgradePricingModal>
+							</ReadMeModal>
 						</>
 					)}
 				</div>
@@ -460,14 +510,14 @@ export default function AIChatInterface() {
 					onSubmit={handleSendMessage}
 					className="w-full overflow-hidden border-0 p-0 shadow-none"
 				>
-					{files.length > 0 && (
-						<div className="flex flex-wrap gap-2 pb-2">
-							{files.map((file, index) => (
-								<FileListItem key={index} index={index} file={file} />
-							))}
+					{tripContext && (tripContext.origin || tripContext.destination) && (
+						<div className="px-4 pt-2">
+							<TripContextBadge
+								context={tripContext}
+								onClear={() => setTripContext(null)}
+							/>
 						</div>
 					)}
-
 					<PromptInputTextarea
 						placeholder={
 							hasCredits
@@ -478,38 +528,16 @@ export default function AIChatInterface() {
 						disabled={!hasCredits || isStreaming}
 					/>
 
-					<PromptInputActions className="flex items-center justify-between gap-2 p-3">
+					<PromptInputActions className="flex items-center justify-end gap-2 p-3">
 						<div className="flex items-center gap-2">
-							<PromptInputAction tooltip="Attach files">
-								<label
-									htmlFor="file-upload"
-									className="hover:bg-secondary-foreground/10 flex size-8 cursor-pointer items-center justify-center rounded-2xl"
-								>
-									<input
-										type="file"
-										multiple
-										onChange={handleFileChange}
-										className="hidden"
-										id="file-upload"
-										disabled={!hasCredits || isStreaming}
-										ref={uploadInputRef}
-									/>
-									<Paperclip className="text-primary size-5" />
-								</label>
-							</PromptInputAction>
+							<TooltipProvider>
+								<TripContextDialog
+									value={tripContext}
+									onChange={setTripContext}
+								/>
+							</TooltipProvider>
 						</div>
-
 						<div className="flex gap-2">
-							<PromptInputAction tooltip="Voice input">
-								<Button
-									variant="outline"
-									size="icon"
-									className="size-9 rounded-full"
-									disabled={!hasCredits || isStreaming}
-								>
-									<MicIcon size={18} />
-								</Button>
-							</PromptInputAction>
 							<PromptInputAction
 								tooltip={isStreaming ? "Generating..." : "Send message"}
 							>

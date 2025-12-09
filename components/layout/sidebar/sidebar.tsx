@@ -1,8 +1,7 @@
 "use client";
 
-import { useThemeConfig } from "@/components/active-theme";
-import ThemeSwitch from "@/components/layout/header/theme-switch";
-import UserMenu from "@/components/layout/header/user-menu";
+import ThemeSwitch from "@/components/layout/settings/theme-switch";
+import UserMenu from "@/components/layout/settings/user-menu";
 import { ThemeCustomizerPanel } from "@/components/theme-customizer";
 import { Dock, DockIcon } from "@/components/ui/dock";
 import {
@@ -11,8 +10,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { Home, MessageSquare, Settings } from "lucide-react";
+import { Home, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 

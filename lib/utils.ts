@@ -16,11 +16,11 @@ export function generateMeta({
 	canonical: string;
 }): Metadata {
 	return {
-		title: `${title} - Shadcn UI Kit`,
+		title: `${title}`,
 		description: description,
-		metadataBase: new URL(`https://shadcnuikit.com`),
+		metadataBase: new URL(`https://www.minii.dev/`),
 		alternates: {
-			canonical: `/dashboard${canonical}`,
+			canonical: `/${canonical}`,
 		},
 		openGraph: {
 			images: [`/images/seo.jpg`],

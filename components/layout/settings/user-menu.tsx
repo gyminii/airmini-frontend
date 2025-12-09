@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Bell, CreditCard, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,13 +21,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCredits } from "@/hooks/use-credits";
 import { useClerk, useUser } from "@clerk/nextjs";
 
 export default function UserMenu() {
 	const { user } = useUser();
 	const { signOut } = useClerk();
-	const { remainingCredits } = useCredits();
 
 	if (!user) return null;
 

@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
-// Match backend schema exactly
 export type TripContext = {
 	ui_language: "EN" | "KO";
 	answer_language: "EN" | "KO";
@@ -189,7 +188,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 							value={draft.nationality_country_code ?? ""}
 							onValueChange={(val) => setField("nationality_country_code", val)}
 						>
-							<SelectTrigger>
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Select your passport country" />
 							</SelectTrigger>
 							<SelectContent>
@@ -287,7 +286,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 								}))
 							}
 						>
-							<SelectTrigger>
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Trip purpose (optional)" />
 							</SelectTrigger>
 							<SelectContent>

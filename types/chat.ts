@@ -1,3 +1,63 @@
+import type { UIMessage } from "ai";
+
+// THOUGHT TYPES
+export type ThoughtPhase =
+	| "analysis"
+	| "search"
+	| "knowledge"
+	| "visa"
+	| "validation"
+	| "other";
+
+export type ThoughtData = {
+	content: string;
+	phase: ThoughtPhase;
+	status: "pending" | "complete";
+};
+
+export type ThoughtItem = {
+	id: string;
+	content: string;
+	phase: ThoughtPhase;
+	status: "pending" | "complete";
+};
+
+// MESSAGE PARTS
+export type TextPart = {
+	type: "text";
+	text: string;
+};
+
+export type ThoughtPart = {
+	type: "data-thought";
+	data: ThoughtData;
+};
+
+export type UIPart = TextPart | ThoughtPart;
+
+// AI SDK MESSAGE TYPES
+export type AirminiDataParts = {
+	thought: ThoughtData;
+};
+
+export type AirminiUIMessage = UIMessage<undefined, AirminiDataParts>;
+
+// DATABASE / API TYPES
+export interface Message {
+	id: string;
+	chat_id: string;
+	role: "user" | "assistant" | "system";
+	content: string;
+	created_at: string;
+}
+
+export interface ChatSummary {
+	id: string;
+	title?: string;
+	created_at: string;
+}
+
+// TRIP CONTEXT
 export interface TripContext {
 	ui_language?: "EN" | "KO";
 	answer_language?: "EN" | "KO";
@@ -14,38 +74,12 @@ export interface TripContext {
 	purpose?: "tourism" | "business" | "family" | "study" | "other";
 }
 
-export interface Message {
-	id: string;
-	chat_id: string;
-	role: "user" | "assistant" | "system";
-	content: string;
-	created_at: string;
-}
+// RENDER MODE
+export const THOUGHT_RENDER_MODE = {
+	inline_after_text: "inline_after_text",
+	inline_before_text: "inline_before_text",
+	grouped_above: "grouped_above",
+	grouped_below: "grouped_below",
+} as const;
 
-export interface ChatSummary {
-	id: string;
-	title?: string;
-	created_at: string;
-}
-
-export interface ChatResponse {
-	message: string;
-	chat_id: string;
-	trip_context: TripContext;
-	needs_onboarding: boolean;
-	source_info?: {
-		sources: string[];
-		query_type?: string;
-	};
-}
-
-export interface ChatRequest {
-	message: string;
-	chat_id?: string;
-	trip_context?: TripContext;
-	stream?: boolean;
-}
-
-export interface ChatUpdate {
-	title?: string;
-}
+export type ThoughtRenderMode = keyof typeof THOUGHT_RENDER_MODE;

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import type { UIMessage } from "ai";
 import { auth } from "@clerk/nextjs/server";
 import type { TripContext } from "@/components/chat-interface/trip-context-dialog";
+import { managerCredits } from "@/lib/actions/credit-manager";
 
 export const maxDuration = 60;
 
@@ -11,9 +12,24 @@ type AIRequestPayload = {
 	tripContext?: TripContext | null;
 };
 
+type RateLimitErrorObject = {
+	type: "RATE_LIMIT";
+	resetAt: string;
+};
+
+function isRateLimitError(err: unknown): err is RateLimitErrorObject {
+	return (
+		typeof err === "object" &&
+		err !== null &&
+		"type" in err &&
+		(err as { type: unknown }).type === "RATE_LIMIT" &&
+		"resetAt" in err
+	);
+}
+
 export async function POST(req: NextRequest) {
 	try {
-		const { getToken } = await auth();
+		const { userId, getToken } = await auth();
 		const token = await getToken();
 
 		const aiPayload = (await req.json()) as AIRequestPayload;
@@ -25,25 +41,54 @@ export async function POST(req: NextRequest) {
 				?.map((part) => (part.type === "text" ? part.text : ""))
 				.join("") ?? "";
 
-		const isAuthenticated = !!token;
 		const isValidUUID =
 			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
 				aiPayload.id
 			);
 
-		// Already in correct format - just pass through
+		let chatId: string | null = null;
+
+		// authenticated: require valid chatId + apply credit limits
+		if (userId) {
+			if (!isValidUUID) {
+				return new Response("Invalid chatId", { status: 400 });
+			}
+
+			chatId = aiPayload.id;
+
+			try {
+				// This consumes one credit and revalidates "credits" tag
+				await managerCredits();
+			} catch (err: unknown) {
+				if (isRateLimitError(err)) {
+					return new Response(
+						JSON.stringify({
+							error: "rate_limit",
+							message:
+								"You reached the 30 message limit. Resets every 2 hours.",
+							resetAt: err.resetAt,
+						}),
+						{
+							status: 429,
+							headers: { "Content-Type": "application/json" },
+						}
+					);
+				}
+				throw err;
+			}
+		}
+
 		const backendPayload = {
 			message: text,
-			chat_id: isAuthenticated && isValidUUID ? aiPayload.id : null,
+			chat_id: userId ? chatId : null,
 			trip_context: aiPayload.tripContext ?? null,
 		};
 
 		const headers: HeadersInit = {
 			"Content-Type": "application/json",
 		};
-
 		if (token) {
-			headers["Authorization"] = `Bearer ${token}`;
+			headers.Authorization = `Bearer ${token}`;
 		}
 
 		const backendRes = await fetch(
@@ -56,12 +101,11 @@ export async function POST(req: NextRequest) {
 		);
 
 		if (!backendRes.ok || !backendRes.body) {
-			console.error(
-				"Backend error:",
-				backendRes.status,
-				await backendRes.text()
-			);
-			return new Response("Backend error", { status: backendRes.status });
+			const backendText = await backendRes.text();
+			console.error("Backend error:", backendRes.status, backendText);
+			return new Response("Backend error", {
+				status: backendRes.status,
+			});
 		}
 
 		return new Response(backendRes.body, {
@@ -74,12 +118,10 @@ export async function POST(req: NextRequest) {
 				"x-vercel-ai-ui-message-stream": "v1",
 			},
 		});
-	} catch (error) {
+	} catch (error: unknown) {
 		if (error instanceof Error && error.message === "aborted") {
-			console.log("Client disconnected (expected during navigation)");
 			return new Response(null, { status: 499 });
 		}
-
 		console.error("Chat route error:", error);
 		return new Response("Internal server error", { status: 500 });
 	}

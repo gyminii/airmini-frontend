@@ -1,15 +1,14 @@
 "use client";
 
 import { SignInModal } from "@/components/auth/sign-in-modal";
+import { ReadMeModal } from "@/components/chat-interface/readme-modal";
+import { ThemeCustomizerPanel } from "@/components/theme-customizer";
 import { useUser } from "@clerk/nextjs";
-import { HelpCircle, LogIn } from "lucide-react";
+import { HelpCircle } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import ThemeSwitch from "../settings/theme-switch";
-import { ThemeCustomizerPanel } from "@/components/theme-customizer";
-import { Button } from "@/components/ui/button";
 import UserMenu from "../settings/user-menu";
-import Image from "next/image";
-import { ReadMeModal } from "@/components/chat-interface/readme-modal";
 
 export function FloatNav() {
 	const { isSignedIn, isLoaded } = useUser();

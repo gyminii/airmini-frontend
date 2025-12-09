@@ -6,7 +6,6 @@ import type { ChatSummary } from "@/types/chat";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// Cached fetch - token is part of cache key
 async function fetchChats(token: string): Promise<ChatSummary[]> {
 	"use cache";
 	cacheTag("chats");

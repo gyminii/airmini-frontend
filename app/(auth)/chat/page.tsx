@@ -1,6 +1,17 @@
 import Interface from "@/components/chat-interface/interface";
-export default function ChatPage() {
-	const chat_id = crypto.randomUUID();
+import { getCreditStatus } from "@/lib/actions/credit-manager";
+import { connection } from "next/server";
+export default async function ChatPage() {
+	await connection();
 
-	return <Interface chatData={{ chat_id, messages: [] }} isNewChat />;
+	const chat_id = crypto.randomUUID();
+	const credits = await getCreditStatus();
+
+	return (
+		<Interface
+			chatData={{ chat_id, messages: [] }}
+			isNewChat
+			credits={credits}
+		/>
+	);
 }

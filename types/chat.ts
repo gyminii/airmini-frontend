@@ -59,19 +59,19 @@ export interface ChatSummary {
 
 // TRIP CONTEXT
 export interface TripContext {
-	ui_language?: "EN" | "KO";
-	answer_language?: "EN" | "KO";
-	nationality_country_code?: string;
-	origin_country_code?: string;
-	origin_city_or_airport?: string;
-	destination_country_code?: string;
-	destination_city_or_airport?: string;
-	trip_type?: "one_way" | "round_trip";
-	departure_date?: string;
-	return_date?: string;
-	airline_code?: string;
-	cabin?: "economy" | "premium" | "business" | "first";
-	purpose?: "tourism" | "business" | "family" | "study" | "other";
+	ui_language: "EN" | "KO";
+	answer_language: "EN" | "KO";
+	nationality_country_code: string | null;
+	origin_country_code: string | null;
+	origin_city_or_airport: string | null;
+	destination_country_code: string | null;
+	destination_city_or_airport: string | null;
+	trip_type: "one_way" | "round_trip" | null;
+	departure_date: string | null;
+	return_date: string | null;
+	airline_code: string | null;
+	cabin: "economy" | "premium" | "business" | "first" | null;
+	purpose: "tourism" | "business" | "family" | "study" | "other" | null;
 }
 
 // RENDER MODE

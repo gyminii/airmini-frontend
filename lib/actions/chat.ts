@@ -30,7 +30,6 @@ async function fetchChatMessages(token: string, chatId: string) {
 	return res.json();
 }
 
-// Public functions - auth outside cache
 export async function getChats(): Promise<ChatSummary[]> {
 	const { getToken } = await auth();
 	const token = await getToken();

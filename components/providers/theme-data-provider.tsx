@@ -1,5 +1,4 @@
-// components/theme-data-provider.tsx
-import { ActiveThemeProvider } from "@/components/active-theme";
+import { ActiveThemeProvider } from "@/components/providers/active-theme-provider";
 import { FloatNav } from "@/components/layout/header/floating-nav";
 import GoogleAnalyticsInit from "@/lib/ga";
 import { DEFAULT_THEME, ThemeType } from "@/lib/themes";

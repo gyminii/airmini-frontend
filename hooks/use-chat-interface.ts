@@ -1,12 +1,12 @@
 "use client";
 
-import { TripContext } from "@/components/chat-interface/trip-context-dialog";
 import { useSafeUser } from "@/hooks/use-safe-user";
 import { invalidateChats } from "@/lib/actions/chat";
-import type { CreditStatus } from "@/lib/actions/credit-manager";
-import type { AirminiUIMessage } from "@/types/chat";
+import { type CreditStatus } from "@/lib/actions/credit-manager";
+import type { AirminiUIMessage, TripContext } from "@/types/chat";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ interface UseChatInterfaceOptions {
 	initialMessages: AirminiUIMessage[];
 	credits?: CreditStatus | null;
 	isNewChat?: boolean;
+	initialTripContext?: TripContext | null;
 }
 
 export function useChatInterface({
@@ -22,25 +23,32 @@ export function useChatInterface({
 	initialMessages,
 	credits,
 	isNewChat,
+	initialTripContext,
 }: UseChatInterfaceOptions) {
 	const [prompt, setPrompt] = useState("");
 	const [isStreaming, setIsStreaming] = useState(false);
-	const [tripContext, setTripContext] = useState<TripContext | null>(null);
+	const [tripContext, setTripContext] = useState<TripContext | null>(
+		initialTripContext ?? null
+	);
 	const [activeCategory, setActiveCategory] = useState("");
-
+	const [chatSessionId, setChatSessionId] = useState<string>(() => {
+		if (isNewChat) return crypto.randomUUID();
+		return chatId;
+	});
+	const router = useRouter();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
 
-	const { user } = useSafeUser();
+	const { user, isSignedIn } = useSafeUser();
 	const userName = user?.fullName || user?.firstName;
+	const isGuest = !isSignedIn;
 
 	// Credit calculations
-	const remaining = credits ? credits.remaining : Infinity;
-	const isGuest = !user;
+	const remaining = credits?.remaining ?? 0;
 	const hasCredits = isGuest || remaining > 0;
 	const remainingCredits = isGuest ? Infinity : remaining;
+	const resetAt = credits?.resetAt ?? null;
 
-	// Chat transport
 	const transport = useMemo(
 		() =>
 			new DefaultChatTransport({
@@ -54,7 +62,13 @@ export function useChatInterface({
 		messages: initialMessages,
 		transport,
 		onFinish: async () => {
-			await invalidateChats();
+			if (isSignedIn) {
+				console.log("CLIENT: onFinish triggered");
+				await invalidateChats();
+
+				console.log("CLIENT: calling router.refresh()");
+				router.refresh();
+			}
 			setIsStreaming(false);
 		},
 		onError: (err) => {
@@ -64,6 +78,7 @@ export function useChatInterface({
 		},
 	});
 
+	console.log({ tripContext, chatId, chatSessionId, isSignedIn });
 	// Auto-scroll on new messages
 	useEffect(() => {
 		if (!containerRef.current || !bottomRef.current) return;
@@ -84,7 +99,7 @@ export function useChatInterface({
 
 		if (!prompt.trim() || isStreaming) return;
 
-		if (isNewChat) {
+		if (isNewChat && isSignedIn) {
 			window.history.replaceState(null, "", `/chat/${chatId}`);
 		}
 
@@ -109,6 +124,7 @@ export function useChatInterface({
 		isNewChat,
 		chatId,
 		tripContext,
+		isSignedIn,
 		sendMessage,
 	]);
 
@@ -146,6 +162,7 @@ export function useChatInterface({
 		// Credits
 		hasCredits,
 		remainingCredits,
+		resetAt,
 
 		// Messages
 		messages,

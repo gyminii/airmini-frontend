@@ -1,5 +1,5 @@
 import type { CreditStatus } from "@/lib/actions/credit-manager";
-import type { AirminiUIMessage } from "@/types/chat";
+import type { AirminiUIMessage, TripContext } from "@/types/chat";
 import type { LucideIcon } from "lucide-react";
 
 export interface InterfaceProps {
@@ -9,6 +9,7 @@ export interface InterfaceProps {
 	};
 	isNewChat?: boolean;
 	credits?: CreditStatus | null;
+	tripContext?: TripContext | null;
 }
 
 export interface SuggestionGroup {

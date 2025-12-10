@@ -90,10 +90,9 @@ function groupConversationsByCategory(conversations: ChatSummary[]) {
 }
 
 function SidebarContent({ chats }: { chats: ChatSummary[] }) {
-	const params = useParams<{ chat_id?: string[] }>();
+	const params = useParams<{ chat_id?: string }>();
 	const router = useRouter();
-	const currentChatId = params.chat_id?.[0];
-
+	const currentChatId = params.chat_id;
 	const [isPending, startTransition] = useTransition();
 
 	// Optimistic state for immediate UI feedback
@@ -139,6 +138,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 
 			try {
 				await updateChat(chatId, title);
+				router.refresh();
 				toast.success("Chat renamed successfully");
 			} catch {
 				toast.error("Failed to rename chat");
@@ -160,14 +160,14 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 
 		const chatId = chatToDelete.id;
 		const shouldRedirect = currentChatId === chatId;
-
 		startTransition(async () => {
 			updateOptimisticChats({ type: "delete", chatId });
 
 			try {
 				await deleteChat(chatId);
-				toast.success("Chat deleted successfully");
+				router.refresh();
 
+				toast.success("Chat deleted successfully");
 				if (shouldRedirect) {
 					router.push("/chat");
 				}
@@ -228,14 +228,11 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 													<Pencil className="mr-2 h-4 w-4" />
 													Rename
 												</DropdownMenuItem>
-												<DropdownMenuItem>
-													<Share2 className="mr-2 h-4 w-4" />
-													Share
-												</DropdownMenuItem>
-												<DropdownMenuItem>
+
+												{/* <DropdownMenuItem>
 													<Pin className="mr-2 h-4 w-4" />
 													Pin
-												</DropdownMenuItem>
+												</DropdownMenuItem> */}
 												<DropdownMenuItem
 													className="text-destructive focus:text-destructive"
 													onClick={() => handleDeleteClick(conversation)}

@@ -10,12 +10,12 @@ export function ChatSkeleton() {
 			<div className="relative w-full flex-1 space-y-4 pe-2 pt-10 md:pt-0">
 				{/* User message */}
 				<div className="flex justify-end">
-					<Skeleton className="h-12 w-[60%] rounded-lg" />
+					<Skeleton className="h-12 w-[85%] sm:w-[75%] rounded-lg" />
 				</div>
 
 				{/* Assistant message */}
 				<div className="flex justify-start">
-					<div className="max-w-[75%] space-y-2">
+					<div className="w-[85%] sm:w-[75%] space-y-2">
 						<Skeleton className="h-4 w-32" />
 						<Skeleton className="h-32 w-full rounded-lg" />
 					</div>
@@ -23,12 +23,12 @@ export function ChatSkeleton() {
 
 				{/* User message */}
 				<div className="flex justify-end">
-					<Skeleton className="h-10 w-[40%] rounded-lg" />
+					<Skeleton className="h-10 w-[70%] sm:w-[60%] rounded-lg" />
 				</div>
 
 				{/* Assistant message */}
 				<div className="flex justify-start">
-					<div className="max-w-[75%] space-y-2">
+					<div className="w-[85%] sm:w-[75%] space-y-2">
 						<Skeleton className="h-4 w-24" />
 						<Skeleton className="h-48 w-full rounded-lg" />
 					</div>

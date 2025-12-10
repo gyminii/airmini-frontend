@@ -81,7 +81,7 @@ export default function UserMenu() {
 								Log out
 							</CommandItem>
 						</CommandGroup>
-						<div className="p-4">
+						{/* <div className="p-4">
 							<div className="bg-muted rounded-md border">
 								<div className="space-y-3 p-3">
 									<div className="flex items-center justify-between">
@@ -95,7 +95,7 @@ export default function UserMenu() {
 									</div>
 								</div>
 							</div>
-						</div>
+						</div> */}
 					</CommandList>
 				</Command>
 			</DialogContent>

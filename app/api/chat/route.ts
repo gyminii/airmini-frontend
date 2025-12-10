@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import type { UIMessage } from "ai";
 import { auth } from "@clerk/nextjs/server";
-import type { TripContext } from "@/components/chat-interface/trip-context-dialog";
 import { managerCredits } from "@/lib/actions/credit-manager";
+import { TripContext } from "@/types/chat";
 
 export const maxDuration = 60;
 

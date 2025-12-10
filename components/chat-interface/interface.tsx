@@ -14,34 +14,25 @@ export default function Interface({
 	isNewChat,
 	chatData,
 	credits,
+	tripContext: initialTripContext,
 }: InterfaceProps) {
 	const {
-		// State
 		prompt,
 		setPrompt,
 		isStreaming,
 		tripContext,
 		setTripContext,
 		activeCategory,
-
-		// Refs
 		containerRef,
 		bottomRef,
-
-		// User info
 		user,
 		userName,
 		isGuest,
-
-		// Credits
 		hasCredits,
 		remainingCredits,
-
-		// Messages
+		resetAt,
 		messages,
 		isFirstResponse,
-
-		// Handlers
 		handleSendMessage,
 		handleSelectSuggestion,
 		handleSelectCategory,
@@ -50,6 +41,7 @@ export default function Interface({
 		initialMessages: chatData.messages,
 		credits,
 		isNewChat,
+		initialTripContext,
 	});
 
 	return (
@@ -83,6 +75,7 @@ export default function Interface({
 				isStreaming={isStreaming}
 				hasCredits={hasCredits}
 				isGuest={isGuest}
+				resetAt={resetAt}
 				remainingCredits={remainingCredits}
 				tripContext={tripContext}
 				onTripContextChange={setTripContext}

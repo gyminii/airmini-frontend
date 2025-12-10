@@ -1,15 +1,14 @@
 // app/layout.tsx
-import { ClerkProvider } from "@clerk/nextjs";
-import { Suspense } from "react";
+import { ThemeDataProvider } from "@/components/providers/theme-data-provider";
 import { fontVariables } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import NextTopLoader from "nextjs-toploader";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
-import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
-import { ThemeDataProvider } from "@/components/providers/theme-data-provider";
 
 export const metadata: Metadata = {
 	title: "Create Next App",
@@ -33,23 +32,21 @@ export default function RootLayout({
 					enableSystem
 					disableTransitionOnChange
 				>
-					<QueryProvider>
-						<NextTopLoader
-							color="var(--primary)"
-							showSpinner={false}
-							height={2}
-						/>
-						<Toaster position="top-center" richColors />
+					<NextTopLoader
+						color="var(--primary)"
+						showSpinner={false}
+						height={2}
+					/>
+					<Toaster position="top-center" richColors />
 
-						{/* ClerkProvider with dynamic inside Suspense for PPR */}
-						<Suspense fallback={<AppSkeleton />}>
-							<ClerkProvider dynamic>
-								<Suspense fallback={children}>
-									<ThemeDataProvider>{children}</ThemeDataProvider>
-								</Suspense>
-							</ClerkProvider>
-						</Suspense>
-					</QueryProvider>
+					{/* ClerkProvider with dynamic inside Suspense for PPR */}
+					<Suspense fallback={<AppSkeleton />}>
+						<ClerkProvider dynamic>
+							<Suspense fallback={children}>
+								<ThemeDataProvider>{children}</ThemeDataProvider>
+							</Suspense>
+						</ClerkProvider>
+					</Suspense>
 				</ThemeProvider>
 			</body>
 		</html>

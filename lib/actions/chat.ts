@@ -4,7 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidateTag, cacheTag } from "next/cache";
 import type { ChatSummary } from "@/types/chat";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL =
+	process.env.NEXT_PUBLIC_BACKEND_URL || "https://airmini-backend.duckdns.org";
 
 async function fetchChats(token: string): Promise<ChatSummary[]> {
 	"use cache";

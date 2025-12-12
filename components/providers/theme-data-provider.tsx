@@ -42,7 +42,8 @@ export async function ThemeDataProvider({
 		<div {...bodyAttributes} className="contents">
 			<ActiveThemeProvider initialTheme={themeSettings}>
 				{children}
-				{process.env.NODE_ENV === "production" ? <GoogleAnalyticsInit /> : null}
+				{/* {process.env.NODE_ENV === "production" ? <GoogleAnalyticsInit /> : null} */}
+				<GoogleAnalyticsInit />
 				<FloatNav />
 			</ActiveThemeProvider>
 		</div>

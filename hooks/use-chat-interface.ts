@@ -78,7 +78,6 @@ export function useChatInterface({
 		},
 	});
 
-	console.log({ tripContext, chatId, chatSessionId, isSignedIn });
 	// Auto-scroll on new messages
 	useEffect(() => {
 		if (!containerRef.current || !bottomRef.current) return;

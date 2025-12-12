@@ -81,21 +81,6 @@ export default function UserMenu() {
 								Log out
 							</CommandItem>
 						</CommandGroup>
-						{/* <div className="p-4">
-							<div className="bg-muted rounded-md border">
-								<div className="space-y-3 p-3">
-									<div className="flex items-center justify-between">
-										<h4 className="text-sm font-medium">Unlimited Messages</h4>
-										<div className="text-muted-foreground flex cursor-pointer items-center text-sm">
-											<span>✨</span>
-										</div>
-									</div>
-									<div className="text-muted-foreground flex items-center text-sm">
-										You have unlimited access
-									</div>
-								</div>
-							</div>
-						</div> */}
 					</CommandList>
 				</Command>
 			</DialogContent>

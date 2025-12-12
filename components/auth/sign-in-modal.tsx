@@ -44,7 +44,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
 				<DialogHeader>
 					<DialogTitle>Sign in to Airmini</DialogTitle>
 					<DialogDescription>
-						Sign in with Google to get unlimited access
+						Sign in with Google to get more credits
 					</DialogDescription>
 				</DialogHeader>
 

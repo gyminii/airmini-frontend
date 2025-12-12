@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 				body: JSON.stringify(backendPayload),
 			}
 		);
-
+		console.log("PAYLOAD: ", backendRes, token);
 		if (!backendRes.ok || !backendRes.body) {
 			const backendText = await backendRes.text();
 			console.error("Backend error:", backendRes.status, backendText);

@@ -4,7 +4,7 @@ AI travel assistant. Ask about visas, flights, accommodations, travel tips. It s
 
 ## Why I Built This
 
-Wanted to build something with streaming AI responses that wasn't just another ChatGPT wrapper. Travel seemed like a good domain — it needs real-time data (visa requirements change, flight prices fluctuate), and there's actual value in combining multiple data sources into one answer.
+Wanted to build something with streaming AI responses that wasn't just another ChatGPT wrapper. Travel seemed like a good domain it needs real-time data (visa requirements change, flight prices fluctuate), and there's actual value in combining multiple data sources into one answer.
 
 The interesting frontend challenges: streaming text that renders as it arrives, visualizing the AI's reasoning process, and handling rate limiting gracefully.
 

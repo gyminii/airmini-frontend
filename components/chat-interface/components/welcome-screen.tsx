@@ -1,37 +1,30 @@
-"use client";
-
-import Lottie from "lottie-react";
-import planeAnimation from "../../../data/Loading 40 _ Paperplane.json";
+import { memo } from "react";
 
 interface WelcomeScreenProps {
 	userName?: string | null;
 	isAuthenticated: boolean;
 }
 
-export function WelcomeScreen({ userName, isAuthenticated }: WelcomeScreenProps) {
+export const WelcomeScreen = memo(function WelcomeScreen({
+	userName,
+	isAuthenticated,
+}: WelcomeScreenProps) {
 	return (
-		<div className="mb-10">
-			<div className="mx-auto -mt-36 hidden w-72 mask-b-from-100% mask-radial-[50%_50%] mask-radial-from-0% md:block">
-				<Lottie
-					className="w-full"
-					animationData={planeAnimation}
-					loop
-					autoplay
-				/>
-			</div>
-
-			<h1 className="text-center text-2xl leading-normal font-medium lg:text-4xl">
-				Good Morning
-				{isAuthenticated && userName && (
-					<span className="text-primary">{` ${userName}`}</span>
-				)}
+		<div className="mb-10 space-y-2 text-center">
+			<h1 className="text-2xl font-semibold leading-snug lg:text-4xl">
+				{isAuthenticated && userName ? (
+					<>
+						Hi <span className="text-primary">{userName}</span>
+						<br />
+					</>
+				) : null}
+				Ask anything about
 				<br />
-				How Can I
-				<span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
-					{" "}
-					Assist You Today?
-				</span>
+				visas & immigration.
 			</h1>
+			<p className="text-muted-foreground text-sm">
+				Visa types, permit requirements, status checks, and more.
+			</p>
 		</div>
 	);
-}
+});

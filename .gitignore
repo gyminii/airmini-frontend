@@ -43,6 +43,8 @@ next-env.d.ts
 # claude
 backend.md
 
+.claude/
+.impeccable.md
 
 # clerk configuration (can include secrets)
 /.clerk/

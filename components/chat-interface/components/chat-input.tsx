@@ -8,7 +8,8 @@ import {
 	PromptInputTextarea,
 } from "@/components/ui/custom/prompt/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ArrowUpIcon, SquareIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SendHorizontal, SquareIcon } from "lucide-react";
 import { TripContextBadge, TripContextDialog } from "../trip-context-dialog";
 import { TripContext } from "@/types/chat";
 
@@ -24,6 +25,13 @@ interface ChatInputProps {
 	guestLimit: number;
 	tripContext: TripContext | null;
 	onTripContextChange: (context: TripContext | null) => void;
+}
+
+function formatResetTime(isoString: string) {
+	return new Date(isoString).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 
 export function ChatInput({
@@ -45,13 +53,15 @@ export function ChatInput({
 			tripContext.origin_city_or_airport ||
 			tripContext.destination_country_code ||
 			tripContext.destination_city_or_airport);
-	const formatResetTime = (isoString: string) => {
-		const date = new Date(isoString);
-		return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-	};
+	const isLimitReached = remainingCredits === 0;
 	return (
-		<div className="bg-muted w-full rounded-2xl p-1 pt-0 shadow-sm">
-			<div className="flex gap-2 px-4 py-1.5 text-xs text-muted-foreground/80">
+		<div className="bg-muted w-full rounded-xl p-1 pt-0 shadow-sm">
+			<div
+				className={cn(
+					"flex gap-2 px-4 py-1.5 text-xs",
+					isLimitReached ? "text-destructive" : "text-muted-foreground/80"
+				)}
+			>
 				{isGuest ? (
 					remainingCredits > 0 ? (
 						<>{remainingCredits} of {guestLimit} free messages remaining &mdash; sign in for more</>
@@ -83,10 +93,10 @@ export function ChatInput({
 				<PromptInputTextarea
 					placeholder={
 						hasCredits
-							? "Ask me anything..."
+							? "Ask about visas, entry requirements, permits..."
 							: "You've hit your current limit. Please wait for it to reset."
 					}
-					className="min-h-auto px-4 py-3 text-sm"
+					className="min-h-0 px-4 py-3 text-sm disabled:cursor-not-allowed"
 					disabled={!hasCredits || isStreaming}
 				/>
 
@@ -105,12 +115,12 @@ export function ChatInput({
 						>
 							<Button
 								variant="default"
-								size="icon"
-								className="size-8 rounded-full"
+								className="h-9 rounded-md px-3"
+								aria-label={isStreaming ? "Stop generating" : "Send message"}
 								onClick={onSubmit}
 								disabled={!prompt.trim() || !hasCredits || isStreaming}
 							>
-								{isStreaming ? <SquareIcon /> : <ArrowUpIcon />}
+								{isStreaming ? <SquareIcon className="size-4" /> : <SendHorizontal className="size-4" />}
 							</Button>
 						</PromptInputAction>
 					</div>

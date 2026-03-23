@@ -2,18 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import {
+	BookOpen,
 	Ellipsis,
 	Menu,
 	Pencil,
-	Pin,
 	Plus,
-	Share2,
-	Sparkles,
 	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState, useOptimistic, useTransition } from "react";
+import { useState, useOptimistic, useTransition, useMemo } from "react";
 
 import {
 	AlertDialog,
@@ -89,11 +87,12 @@ function groupConversationsByCategory(conversations: ChatSummary[]) {
 		.map(([key, group]) => ({ key, ...group }));
 }
 
-function SidebarContent({ chats }: { chats: ChatSummary[] }) {
+function SidebarContent({ chats, onNavigate }: { chats: ChatSummary[]; onNavigate?: () => void }) {
 	const params = useParams<{ chat_id?: string }>();
 	const router = useRouter();
 	const currentChatId = params.chat_id;
-	const [isPending, startTransition] = useTransition();
+	const [isRenamePending, startRenameTransition] = useTransition();
+	const [isDeletePending, startDeleteTransition] = useTransition();
 
 	// Optimistic state for immediate UI feedback
 	const [optimisticChats, updateOptimisticChats] = useOptimistic(
@@ -119,7 +118,10 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [chatToDelete, setChatToDelete] = useState<ChatSummary | null>(null);
 
-	const conversationGroups = groupConversationsByCategory(optimisticChats);
+	const conversationGroups = useMemo(
+		() => groupConversationsByCategory(optimisticChats),
+		[optimisticChats]
+	);
 
 	const handleRenameClick = (chat: ChatSummary) => {
 		setChatToRename(chat);
@@ -133,7 +135,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 		const chatId = chatToRename.id;
 		const title = newTitle.trim();
 
-		startTransition(async () => {
+		startRenameTransition(async () => {
 			updateOptimisticChats({ type: "rename", chatId, title });
 
 			try {
@@ -160,7 +162,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 
 		const chatId = chatToDelete.id;
 		const shouldRedirect = currentChatId === chatId;
-		startTransition(async () => {
+		startDeleteTransition(async () => {
 			updateOptimisticChats({ type: "delete", chatId });
 
 			try {
@@ -182,19 +184,19 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 
 	return (
 		<>
-			<div className="flex h-full w-72 flex-col border-e">
+			<div className="flex h-full w-64 lg:w-72 flex-col md:border-e">
 				<div className="flex-1 space-y-4 overflow-y-auto p-4">
 					{conversationGroups.length === 0 && (
-						<div className="text-muted-foreground py-4 text-center text-sm">
+						<div role="status" className="text-muted-foreground py-4 text-center text-sm">
 							No conversations yet
 						</div>
 					)}
 
 					{conversationGroups.map((group) => (
 						<div key={group.key}>
-							<h3 className="text-muted-foreground mb-4 text-xs">
+							<p className="text-muted-foreground mb-2 px-3 text-xs font-medium uppercase tracking-wide">
 								{group.title}
-							</h3>
+							</p>
 							<div className="space-y-0.5">
 								{group.conversations.map((conversation) => (
 									<div
@@ -203,6 +205,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 									>
 										<Link
 											href={`/chat/${conversation.id}`}
+											onClick={onNavigate}
 											className={cn(
 												"hover:bg-muted block w-full min-w-0 justify-start truncate rounded-lg p-2 px-3 text-start text-sm",
 												currentChatId === conversation.id && "bg-muted"
@@ -217,6 +220,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 													variant="ghost"
 													size="icon"
 													className="shrink-0 opacity-0 group-hover:opacity-100"
+													aria-label={`Options for ${conversation.title || "New Chat"}`}
 												>
 													<Ellipsis className="h-4 w-4" />
 												</Button>
@@ -229,10 +233,6 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 													Rename
 												</DropdownMenuItem>
 
-												{/* <DropdownMenuItem>
-													<Pin className="mr-2 h-4 w-4" />
-													Pin
-												</DropdownMenuItem> */}
 												<DropdownMenuItem
 													className="text-destructive focus:text-destructive"
 													onClick={() => handleDeleteClick(conversation)}
@@ -256,7 +256,7 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 								variant="ghost"
 								className="hover:bg-muted w-full justify-start"
 							>
-								<Sparkles className="mr-2 h-4 w-4" />
+								<BookOpen className="mr-2 h-4 w-4" />
 								Read Me
 							</Button>
 						</ReadMeModal>
@@ -301,9 +301,9 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 						</Button>
 						<Button
 							onClick={handleRenameSubmit}
-							disabled={!newTitle.trim() || isPending}
+							disabled={!newTitle.trim() || isRenamePending}
 						>
-							{isPending ? "Saving..." : "Save"}
+							{isRenamePending ? "Saving..." : "Save"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -325,9 +325,9 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							disabled={isPending}
+							disabled={isDeletePending}
 						>
-							{isPending ? "Deleting..." : "Delete"}
+							{isDeletePending ? "Deleting..." : "Delete"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -337,24 +337,27 @@ function SidebarContent({ chats }: { chats: ChatSummary[] }) {
 }
 
 export default function ChatSidebar({ chats }: { chats: ChatSummary[] }) {
+	const [sheetOpen, setSheetOpen] = useState(false);
+
 	return (
 		<>
 			<div className="hidden md:flex">
 				<SidebarContent chats={chats} />
 			</div>
 
-			<Sheet>
+			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
 				<SheetTrigger asChild>
 					<Button
 						variant="ghost"
 						size="icon"
 						className="absolute end-0 top-0 z-10 md:hidden"
+						aria-label="Open sidebar"
 					>
 						<Menu />
 					</Button>
 				</SheetTrigger>
 				<SheetContent side="left">
-					<SidebarContent chats={chats} />
+					<SidebarContent chats={chats} onNavigate={() => setSheetOpen(false)} />
 				</SheetContent>
 			</Sheet>
 		</>

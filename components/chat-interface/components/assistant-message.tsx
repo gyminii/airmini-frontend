@@ -17,6 +17,7 @@ import {
 } from "@/utils/utils";
 import { CopyIcon } from "@radix-ui/react-icons";
 import { RefreshCw } from "lucide-react";
+import { memo, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { ThoughtRenderer } from "./thought-renderer";
 
@@ -27,7 +28,6 @@ interface AssistantMessageProps {
 	showFollowUps?: boolean;
 	onSelectFollowUp?: (text: string) => void;
 }
-
 
 function TextContent({ segments }: { segments: string[] }) {
 	if (segments.length === 0) return null;
@@ -57,7 +57,7 @@ function renderByMode(
 					{thoughtsElement}
 					{textSegments.map((text, i) => (
 						<div
-							key={i}
+							key={`seg-${i}-${text.slice(0, 12)}`}
 							className="bg-accent rounded-xl px-4 py-3 prose prose-sm text-foreground"
 						>
 							<Markdown className="space-y-3">{text}</Markdown>
@@ -71,7 +71,7 @@ function renderByMode(
 				<>
 					{textSegments.map((text, i) => (
 						<div
-							key={i}
+							key={`seg-${i}-${text.slice(0, 12)}`}
 							className="bg-accent rounded-xl px-4 py-3 prose prose-sm text-foreground"
 						>
 							<Markdown className="space-y-3">{text}</Markdown>
@@ -102,21 +102,30 @@ function renderByMode(
 	}
 }
 
-export function AssistantMessage({
+export const AssistantMessage = memo(function AssistantMessage({
 	parts,
 	isStreaming,
 	onRegenerate,
 	showFollowUps,
 	onSelectFollowUp,
 }: AssistantMessageProps) {
-	const textSegments = extractTextSegments(parts);
-	const thoughts = extractThoughtSteps(parts);
-	const textContent = extractTextContent(parts);
-	const backendSuggestions = extractSuggestions(parts);
-	const followUps = getFollowUps(backendSuggestions, thoughts.map((t) => t.phase));
+	const textSegments = useMemo(() => extractTextSegments(parts), [parts]);
+	const thoughts = useMemo(() => extractThoughtSteps(parts), [parts]);
+	const textContent = useMemo(() => extractTextContent(parts), [parts]);
+	const backendSuggestions = useMemo(() => extractSuggestions(parts), [parts]);
+	const thoughtPhases = useMemo(() => thoughts.map((t) => t.phase), [thoughts]);
+	const followUps = useMemo(
+		() => getFollowUps(backendSuggestions, thoughtPhases),
+		[backendSuggestions, thoughtPhases]
+	);
+
+	const handleCopy = useCallback(() => {
+		navigator.clipboard.writeText(textContent);
+		toast.success("Copied to clipboard");
+	}, [textContent]);
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-2">
 			{renderByMode(CURRENT_THOUGHT_MODE, thoughts, textSegments, isStreaming)}
 
 			<MessageActions className="flex gap-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -124,11 +133,9 @@ export function AssistantMessage({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="rounded-full"
-						onClick={() => {
-							navigator.clipboard.writeText(textContent);
-							toast.success("Copied to clipboard");
-						}}
+						className="size-10 rounded-full"
+						aria-label="Copy message"
+						onClick={handleCopy}
 					>
 						<CopyIcon />
 					</Button>
@@ -139,7 +146,8 @@ export function AssistantMessage({
 						<Button
 							variant="ghost"
 							size="icon"
-							className="rounded-full"
+							className="size-10 rounded-full"
+							aria-label="Regenerate response"
 							onClick={onRegenerate}
 						>
 							<RefreshCw className="size-4" />
@@ -149,12 +157,13 @@ export function AssistantMessage({
 			</MessageActions>
 
 			{showFollowUps && onSelectFollowUp && followUps.length > 0 && (
-				<div className="mt-2 flex flex-wrap gap-2">
-					{followUps.map((suggestion) => (
+				<div className="mt-3 flex flex-wrap gap-2">
+					{followUps.map((suggestion, i) => (
 						<button
 							key={suggestion}
 							onClick={() => onSelectFollowUp(suggestion)}
-							className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+							style={{ animationDelay: `${i * 60}ms` }}
+							className="animate-in fade-in slide-in-from-bottom-1 fill-mode-both min-h-[36px] rounded-full border bg-background px-3 py-1.5 text-sm text-foreground/60 duration-200 transition-colors hover:border-foreground/30 hover:text-foreground"
 						>
 							{suggestion}
 						</button>
@@ -163,4 +172,4 @@ export function AssistantMessage({
 			)}
 		</div>
 	);
-}
+});

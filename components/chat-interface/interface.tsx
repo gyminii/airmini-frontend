@@ -19,6 +19,7 @@ import {
 import { useChatInterface } from "@/hooks/use-chat-interface";
 import { exportChatAsText } from "@/lib/utils/export-chat";
 import { InterfaceProps } from "./types";
+import { cn } from "@/lib/utils";
 
 export default function Interface({
 	isNewChat,
@@ -74,25 +75,29 @@ export default function Interface({
 	}, [router]);
 
 	return (
-		<div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center space-y-3 lg:p-4">
-			<div className="flex h-8 w-full items-center justify-end px-2">
+		<div className="flex h-full w-full flex-col">
+			{/* Toolbar — constrained to max-w-3xl, content-width */}
+			<div className="mx-auto flex h-8 w-full max-w-3xl shrink-0 items-center justify-end pe-12 ps-2 md:pe-2 lg:px-4">
 				{!isFirstResponse && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="size-8 rounded-full"
-								onClick={() => exportChatAsText(messages)}
-							>
-								<DownloadIcon className="size-4" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Export chat</TooltipContent>
-					</Tooltip>
+					<div className="animate-in fade-in duration-300">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="size-10 rounded-full"
+									onClick={() => exportChatAsText(messages)}
+								>
+									<DownloadIcon className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Download as text</TooltipContent>
+						</Tooltip>
+					</div>
 				)}
 			</div>
 
+			{/* Message list — full viewport width so scrollbar sits at screen edge */}
 			<MessageList
 				messages={messages}
 				isStreaming={isStreaming}
@@ -103,7 +108,7 @@ export default function Interface({
 				onSelectFollowUp={handleSelectSuggestion}
 			/>
 
-			<div className="fixed right-4 bottom-4">
+			<div className="fixed right-6 bottom-6">
 				<PromptScrollButton
 					containerRef={containerRef}
 					scrollRef={bottomRef}
@@ -111,31 +116,39 @@ export default function Interface({
 				/>
 			</div>
 
-			{isFirstResponse && (
-				<WelcomeScreen userName={userName} isAuthenticated={!!user} />
-			)}
+			{/* Bottom section — constrained, vertically centered on welcome screen */}
+			<div
+				className={cn(
+					"mx-auto flex w-full max-w-3xl flex-col gap-2 px-4 pb-4 lg:px-4",
+					isFirstResponse && "flex-1 justify-center"
+				)}
+			>
+				{isFirstResponse && (
+					<WelcomeScreen userName={userName} isAuthenticated={!!user} />
+				)}
 
-			<ChatInput
-				prompt={prompt}
-				onPromptChange={setPrompt}
-				onSubmit={handleSendMessage}
-				isStreaming={isStreaming}
-				hasCredits={hasCredits}
-				isGuest={isGuest}
-				resetAt={resetAt}
-				remainingCredits={remainingCredits}
-				guestLimit={guestLimit}
-				tripContext={tripContext}
-				onTripContextChange={setTripContext}
-			/>
-
-			{isFirstResponse && (
-				<SuggestionPanel
-					activeCategory={activeCategory}
-					onSelectCategory={handleSelectCategory}
-					onSelectSuggestion={handleSelectSuggestion}
+				<ChatInput
+					prompt={prompt}
+					onPromptChange={setPrompt}
+					onSubmit={handleSendMessage}
+					isStreaming={isStreaming}
+					hasCredits={hasCredits}
+					isGuest={isGuest}
+					resetAt={resetAt}
+					remainingCredits={remainingCredits}
+					guestLimit={guestLimit}
+					tripContext={tripContext}
+					onTripContextChange={setTripContext}
 				/>
-			)}
+
+				{isFirstResponse && (
+					<SuggestionPanel
+						activeCategory={activeCategory}
+						onSelectCategory={handleSelectCategory}
+						onSelectSuggestion={handleSelectSuggestion}
+					/>
+				)}
+			</div>
 		</div>
 	);
 }

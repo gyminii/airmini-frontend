@@ -36,7 +36,7 @@ export function ChatSkeleton() {
 			</div>
 
 			{/* Input area skeleton */}
-			<div className="w-full rounded-2xl bg-primary/10 p-1 pt-0">
+			<div className="w-full rounded-xl bg-primary/10 p-1 pt-0">
 				<div className="flex gap-2 px-4 py-2">
 					<Skeleton className="h-3 w-48" />
 				</div>

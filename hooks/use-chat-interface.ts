@@ -84,13 +84,6 @@ export function useChatInterface({
 			if (isGuest) {
 				refreshGuestRemaining();
 			}
-			// Only refresh sidebar when a new chat is first created — not on every reply
-			if (isSignedIn && isNewChat && !hasUpdatedUrlRef.current) {
-				hasUpdatedUrlRef.current = true;
-				window.history.replaceState(null, "", `/chat/${chatId}`);
-				await invalidateChats();
-				router.refresh();
-			}
 		},
 		onError: (err) => {
 			console.error("Chat error:", err);
@@ -134,6 +127,17 @@ export function useChatInterface({
 		const messageContent = prompt;
 		setPrompt("");
 
+		// For new chats: update URL and invalidate sidebar cache BEFORE streaming.
+		// Doing this after streaming (in onFinish) caused router.refresh() to remount
+		// Interface from a different route segment (/chat → /chat/[id]), creating a new
+		// Chat instance seeded with text-only DB messages and losing follow-up suggestions.
+		if (isSignedIn && isNewChat && !hasUpdatedUrlRef.current) {
+			hasUpdatedUrlRef.current = true;
+			window.history.replaceState(null, "", `/chat/${chatId}`);
+			await invalidateChats();
+			// No router.refresh() — sidebar picks up the invalidated cache on next navigation.
+		}
+
 		try {
 			await sendMessage(
 				{ text: messageContent },
@@ -143,7 +147,7 @@ export function useChatInterface({
 			console.error("sendMessage error:", err);
 			toast.error("Failed to send message");
 		}
-	}, [prompt, isStreaming, hasCredits, tripContext, sendMessage]);
+	}, [prompt, isStreaming, hasCredits, tripContext, sendMessage, isSignedIn, isNewChat, chatId]);
 
 	// Select suggestion
 	const handleSelectSuggestion = useCallback((suggestion: string) => {

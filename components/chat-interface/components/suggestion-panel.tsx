@@ -2,6 +2,7 @@
 
 import { Suggestion } from "@/components/ui/custom/prompt/suggestion";
 import { SUGGESTION_GROUPS } from "@/lib/constants/chat";
+import { memo } from "react";
 
 interface SuggestionPanelProps {
 	activeCategory: string;
@@ -9,7 +10,7 @@ interface SuggestionPanelProps {
 	onSelectSuggestion: (suggestion: string) => void;
 }
 
-export function SuggestionPanel({
+export const SuggestionPanel = memo(function SuggestionPanel({
 	activeCategory,
 	onSelectCategory,
 	onSelectSuggestion,
@@ -20,8 +21,8 @@ export function SuggestionPanel({
 	const showCategorySuggestions = activeCategory !== "";
 
 	return (
-		<div className="relative flex w-full flex-col items-center justify-center space-y-2">
-			<div className="absolute top-0 left-0 h-[70px] w-full">
+		<div className="relative flex w-full flex-col items-center justify-center">
+			<div className="absolute top-0 left-0 min-h-[70px] w-full">
 				{showCategorySuggestions && activeCategoryData ? (
 					<div className="flex w-full flex-col space-y-1">
 						{activeCategoryData.items.map((suggestion) => (
@@ -52,4 +53,4 @@ export function SuggestionPanel({
 			</div>
 		</div>
 	);
-}
+});

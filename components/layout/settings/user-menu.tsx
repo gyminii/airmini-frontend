@@ -43,20 +43,22 @@ export default function UserMenu() {
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<DialogTrigger asChild>
-						<button className="float-trigger flex items-center justify-center">
+						<button
+							className="float-trigger flex items-center justify-center"
+							aria-label="Open account menu"
+						>
 							<Avatar className="size-8">
 								<AvatarImage src={userImage} alt={userName} />
 								<AvatarFallback>{userInitials}</AvatarFallback>
 							</Avatar>
-							<span className="sr-only">User menu</span>
 						</button>
 					</DialogTrigger>
 				</TooltipTrigger>
 				<TooltipContent>
-					<p>User</p>
+					<p>Account</p>
 				</TooltipContent>
 			</Tooltip>
-			<DialogTitle className="sr-only">User</DialogTitle>
+			<DialogTitle className="sr-only">Account</DialogTitle>
 			<DialogContent className="max-w-md  p-0">
 				<Command className="h-full flex-1 rounded-lg border-none shadow-none">
 					<CommandList className="h-full">

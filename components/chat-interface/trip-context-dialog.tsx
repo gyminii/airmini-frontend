@@ -112,10 +112,13 @@ function CountrySelect({
 					<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[280px] p-0" align="start">
-				<Command>
+			<PopoverContent className="w-[min(280px,90vw)] p-0" align="start">
+				<Command className="overflow-visible">
 					<CommandInput placeholder="Search country..." />
-					<CommandList className="max-h-60 overflow-y-auto">
+					<CommandList
+						className="max-h-60 overflow-y-scroll"
+						onWheelCapture={(e) => e.stopPropagation()}
+					>
 						<CommandEmpty>No country found.</CommandEmpty>
 						<CommandGroup>
 							{COUNTRIES.map((c) => (
@@ -161,15 +164,20 @@ function AirlineSelect({
 					className="w-full justify-between font-normal text-sm"
 				>
 					{selected?.label ?? (
-						<span className="text-muted-foreground">Select airline (optional)</span>
+						<span className="text-muted-foreground">
+							Select airline (optional)
+						</span>
 					)}
 					<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[320px] p-0" align="start">
-				<Command>
+			<PopoverContent className="w-[min(320px,90vw)] p-0" align="start">
+				<Command className="overflow-visible">
 					<CommandInput placeholder="Search airline..." />
-					<CommandList className="max-h-60 overflow-y-auto">
+					<CommandList
+						className="max-h-60 overflow-y-scroll"
+						onWheelCapture={(e) => e.stopPropagation()}
+					>
 						<CommandEmpty>No airline found.</CommandEmpty>
 						<CommandGroup>
 							{AIRLINES.map((a) => (
@@ -184,7 +192,7 @@ function AirlineSelect({
 									<Check
 										className={cn(
 											"mr-2 size-4",
-											value === a.value ? "opacity-100" : "opacity-0"
+											value === a.value ? "opacity-100" : "opacity-0",
 										)}
 									/>
 									{a.label}
@@ -228,7 +236,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 		? Object.entries(value).filter(([key, v]) => {
 				if (key === "ui_language" || key === "answer_language") return false;
 				return v !== null;
-		  }).length
+			}).length
 		: 0;
 
 	const handleSave = () => {
@@ -302,7 +310,8 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 					<DialogTrigger asChild>
 						<button
 							type="button"
-							className="relative flex size-8 items-center justify-center rounded-full transition-colors hover:bg-muted"
+							aria-label={hasContext ? "Edit trip details" : "Add trip details"}
+							className="relative flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted"
 						>
 							<Plane
 								className={
@@ -326,17 +335,13 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[540px]">
 				<DialogHeader>
-					<div className="flex items-center gap-2">
-						<div className="rounded-lg bg-primary/10 p-2 text-primary">
-							<Plane className="size-5" />
-						</div>
-						<div>
-							<DialogTitle>Trip Details</DialogTitle>
-							<DialogDescription>
-								Add context so the assistant can answer with your route in mind.
-							</DialogDescription>
-						</div>
-					</div>
+					<DialogTitle className="flex items-center gap-2">
+						<Plane className="size-5 text-primary" />
+						Trip Details
+					</DialogTitle>
+					<DialogDescription>
+						Add context so the assistant can answer with your situation in mind.
+					</DialogDescription>
 				</DialogHeader>
 
 				<div className="mt-4 space-y-4">
@@ -346,9 +351,14 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 							<Languages className="size-4 text-muted-foreground" />
 							Response language
 						</Label>
-						<div className="flex overflow-hidden rounded-md border">
+						<div
+							role="group"
+							aria-label="Response language"
+							className="flex overflow-hidden rounded-md border"
+						>
 							<button
 								type="button"
+								aria-pressed={draft.answer_language === "EN"}
 								onClick={() =>
 									setDraft((p) => ({ ...p, answer_language: "EN" }))
 								}
@@ -356,13 +366,14 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 									"px-3 py-1 text-sm transition-colors",
 									draft.answer_language === "EN"
 										? "bg-primary text-primary-foreground"
-										: "hover:bg-muted"
+										: "hover:bg-muted",
 								)}
 							>
 								EN
 							</button>
 							<button
 								type="button"
+								aria-pressed={draft.answer_language === "KO"}
 								onClick={() =>
 									setDraft((p) => ({ ...p, answer_language: "KO" }))
 								}
@@ -370,7 +381,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 									"px-3 py-1 text-sm transition-colors",
 									draft.answer_language === "KO"
 										? "bg-primary text-primary-foreground"
-										: "hover:bg-muted"
+										: "hover:bg-muted",
 								)}
 							>
 								한국어
@@ -461,7 +472,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 										mode="single"
 										selected={departureDate}
 										onSelect={handleDepartureSelect}
-										initialFocus
+										autoFocus
 									/>
 								</PopoverContent>
 							</Popover>
@@ -492,7 +503,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 										mode="single"
 										selected={returnDate}
 										onSelect={handleReturnSelect}
-										initialFocus
+										autoFocus
 									/>
 								</PopoverContent>
 							</Popover>
@@ -618,6 +629,7 @@ export function TripContextBadge({
 			<button
 				type="button"
 				onClick={onClear}
+				aria-label="Clear trip context"
 				className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
 			>
 				<X className="size-3" />

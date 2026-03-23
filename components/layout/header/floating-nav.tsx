@@ -19,14 +19,14 @@ export function FloatNav() {
 			<SignInModal open={showSignIn} onOpenChange={setShowSignIn} />
 			<nav
 				aria-label="Floating Navigation"
-				className=" -translate-x-1/2 fixed top-3.5 md:top-5.5 left-1/2 z-50 flex w-fit flex-row items-center justify-center whitespace-nowrap rounded-lg border bg-background/70 px-1 py-1 text-foreground bg-blend-luminosity shadow-xs backdrop-blur-xl transition"
+				className="-translate-x-1/2 fixed top-3.5 md:top-5.5 left-1/2 z-50 flex w-fit flex-row items-center justify-center whitespace-nowrap rounded-lg border bg-background/80 px-1 py-1 text-foreground shadow-xs backdrop-blur-sm transition"
 			>
 				<div className="flex items-center">
 					<ThemeSwitch />
 					<ThemeCustomizerPanel />
 					{!isSignedIn && (
 						<ReadMeModal>
-							<button className="float-trigger flex items-center justify-center">
+							<button className="float-trigger flex items-center justify-center" aria-label="Read Me">
 								<HelpCircle className="size-5" />
 							</button>
 						</ReadMeModal>
@@ -38,8 +38,8 @@ export function FloatNav() {
 							aria-label="Sign in with Google"
 						>
 							<Image
-								src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-								alt="Google Sign In"
+								src="/images/google.svg"
+								alt="Google"
 								width={20}
 								height={20}
 							/>

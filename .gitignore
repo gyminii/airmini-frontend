@@ -46,3 +46,4 @@ backend.md
 
 # clerk configuration (can include secrets)
 /.clerk/
+CLAUDE.md

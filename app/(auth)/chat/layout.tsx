@@ -5,6 +5,7 @@ import ChatSidebar from "@/components/chat-interface/sidebar";
 import { getChats } from "@/lib/actions/chat";
 import { auth } from "@clerk/nextjs/server";
 import { SidebarSkeleton } from "@/components/chat-interface/sidebar-skeleton";
+import { connection } from "next/server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	return generateMeta({
@@ -15,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function AuthenticatedSidebar() {
+	await connection();
 	const { userId } = await auth();
 	if (!userId) return null;
 

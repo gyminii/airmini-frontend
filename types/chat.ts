@@ -33,7 +33,12 @@ export type ThoughtPart = {
 	data: ThoughtData;
 };
 
-export type UIPart = TextPart | ThoughtPart;
+export type SuggestionsPart = {
+	type: "data-suggestions";
+	data: { suggestions: string[] };
+};
+
+export type UIPart = TextPart | ThoughtPart | SuggestionsPart;
 
 // AI SDK MESSAGE TYPES
 export type AirminiDataParts = {

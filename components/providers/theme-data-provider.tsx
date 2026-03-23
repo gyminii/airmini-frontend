@@ -39,7 +39,7 @@ export async function ThemeDataProvider({
 	);
 
 	return (
-		<div {...bodyAttributes} className="contents">
+		<div {...bodyAttributes} data-theme-wrapper="true" className="contents">
 			<ActiveThemeProvider initialTheme={themeSettings}>
 				{children}
 				{/* {process.env.NODE_ENV === "production" ? <GoogleAnalyticsInit /> : null} */}

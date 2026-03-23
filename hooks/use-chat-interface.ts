@@ -3,6 +3,7 @@
 import { useSafeUser } from "@/hooks/use-safe-user";
 import { invalidateChats } from "@/lib/actions/chat";
 import { type CreditStatus } from "@/lib/actions/credit-manager";
+import { GUEST_MESSAGE_LIMIT } from "@/lib/constants/chat";
 import type { AirminiUIMessage, TripContext } from "@/types/chat";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -26,28 +27,46 @@ export function useChatInterface({
 	initialTripContext,
 }: UseChatInterfaceOptions) {
 	const [prompt, setPrompt] = useState("");
-	const [isStreaming, setIsStreaming] = useState(false);
 	const [tripContext, setTripContext] = useState<TripContext | null>(
 		initialTripContext ?? null
 	);
 	const [activeCategory, setActiveCategory] = useState("");
-	const [chatSessionId, setChatSessionId] = useState<string>(() => {
-		if (isNewChat) return crypto.randomUUID();
-		return chatId;
-	});
 	const router = useRouter();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
+	// Track whether we've already updated the URL for this new chat session
+	const hasUpdatedUrlRef = useRef(false);
 
 	const { user, isSignedIn } = useSafeUser();
 	const userName = user?.fullName || user?.firstName;
 	const isGuest = !isSignedIn;
 
-	// Credit calculations
+	// Credit calculations (authenticated)
 	const remaining = credits?.remaining ?? 0;
-	const hasCredits = isGuest || remaining > 0;
-	const remainingCredits = isGuest ? Infinity : remaining;
 	const resetAt = credits?.resetAt ?? null;
+
+	// Guest rate limit state — pulled from Redis via GET /api/chat/rate-limit
+	const [guestRemaining, setGuestRemaining] = useState<number>(GUEST_MESSAGE_LIMIT);
+	const [guestResetAt, setGuestResetAt] = useState<string | null>(null);
+
+	const refreshGuestRemaining = useCallback(() => {
+		fetch("/api/chat/rate-limit")
+			.then((r) => r.json())
+			.then((data: { remaining: number; reset?: string }) => {
+				if (typeof data.remaining === "number") setGuestRemaining(data.remaining);
+				if (data.reset) setGuestResetAt(data.reset);
+			})
+			.catch(() => {/* keep default */});
+	}, []);
+
+	useEffect(() => {
+		if (!isGuest) return;
+		refreshGuestRemaining();
+	}, [isGuest, refreshGuestRemaining]);
+
+	const hasCredits = isGuest ? guestRemaining > 0 : remaining > 0;
+	const remainingCredits = isGuest ? guestRemaining : remaining;
+	const effectiveResetAt = isGuest ? guestResetAt : resetAt;
 
 	const transport = useMemo(
 		() =>
@@ -57,35 +76,49 @@ export function useChatInterface({
 		[]
 	);
 
-	const { messages, sendMessage } = useChat({
+	const { messages, sendMessage, status, regenerate } = useChat({
 		id: chatId,
 		messages: initialMessages,
 		transport,
 		onFinish: async () => {
-			if (isSignedIn) {
-				console.log("CLIENT: onFinish triggered");
+			if (isGuest) {
+				refreshGuestRemaining();
+			}
+			// Only refresh sidebar when a new chat is first created — not on every reply
+			if (isSignedIn && isNewChat && !hasUpdatedUrlRef.current) {
+				hasUpdatedUrlRef.current = true;
+				window.history.replaceState(null, "", `/chat/${chatId}`);
 				await invalidateChats();
-
-				console.log("CLIENT: calling router.refresh()");
 				router.refresh();
 			}
-			setIsStreaming(false);
 		},
 		onError: (err) => {
 			console.error("Chat error:", err);
-			setIsStreaming(false);
+			// Check for guest rate limit — message body contains our JSON
+			try {
+				const body = JSON.parse(err.message);
+				if (body?.error === "rate_limit") {
+					toast.error("Free limit reached", {
+						description: `You've used all ${GUEST_MESSAGE_LIMIT} free messages. Sign in for unlimited access.`,
+						action: { label: "Sign in", onClick: () => router.push("/sign-in") },
+						duration: 8000,
+					});
+					return;
+				}
+			} catch {
+				// not a JSON error — fall through
+			}
 			toast.error("Something went wrong. Please try again.");
 		},
 	});
 
-	// Auto-scroll on new messages
-	useEffect(() => {
-		if (!containerRef.current || !bottomRef.current) return;
-		containerRef.current.scrollTo({
-			top: containerRef.current.scrollHeight,
-			behavior: "smooth",
-		});
-	}, [messages.length]);
+	// Derived from SDK status — single source of truth, no manual state to desync
+	const isStreaming = status === "streaming" || status === "submitted";
+
+	const handleRegenerate = useCallback(() => {
+		if (isStreaming) return;
+		regenerate();
+	}, [isStreaming, regenerate]);
 
 	// Send message handler
 	const handleSendMessage = useCallback(async () => {
@@ -98,13 +131,8 @@ export function useChatInterface({
 
 		if (!prompt.trim() || isStreaming) return;
 
-		if (isNewChat && isSignedIn) {
-			window.history.replaceState(null, "", `/chat/${chatId}`);
-		}
-
 		const messageContent = prompt;
 		setPrompt("");
-		setIsStreaming(true);
 
 		try {
 			await sendMessage(
@@ -114,18 +142,8 @@ export function useChatInterface({
 		} catch (err) {
 			console.error("sendMessage error:", err);
 			toast.error("Failed to send message");
-			setIsStreaming(false);
 		}
-	}, [
-		prompt,
-		isStreaming,
-		hasCredits,
-		isNewChat,
-		chatId,
-		tripContext,
-		isSignedIn,
-		sendMessage,
-	]);
+	}, [prompt, isStreaming, hasCredits, tripContext, sendMessage]);
 
 	// Select suggestion
 	const handleSelectSuggestion = useCallback((suggestion: string) => {
@@ -161,7 +179,8 @@ export function useChatInterface({
 		// Credits
 		hasCredits,
 		remainingCredits,
-		resetAt,
+		resetAt: effectiveResetAt,
+		guestLimit: GUEST_MESSAGE_LIMIT,
 
 		// Messages
 		messages,
@@ -169,6 +188,7 @@ export function useChatInterface({
 
 		// Handlers
 		handleSendMessage,
+		handleRegenerate,
 		handleSelectSuggestion,
 		handleSelectCategory,
 	};

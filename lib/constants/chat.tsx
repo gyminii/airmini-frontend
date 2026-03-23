@@ -12,6 +12,9 @@ import {
 import type { ThoughtPhase, ThoughtRenderMode } from "@/types/chat";
 import type { SuggestionGroup } from "@/components/chat-interface/types";
 
+// GUEST RATE LIMIT (keep in sync with app/api/chat/route.ts)
+export const GUEST_MESSAGE_LIMIT = 5;
+
 // CURRENT RENDER MODE
 export const CURRENT_THOUGHT_MODE: ThoughtRenderMode = "grouped_above";
 

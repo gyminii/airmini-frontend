@@ -1,5 +1,6 @@
 "use server";
 
+import { connection } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
 const WINDOW_HOURS = 2;
@@ -30,6 +31,8 @@ export async function managerCredits(): Promise<CreditLimits> {
 	const publicMetadata = (user.publicMetadata ?? {}) as {
 		credits?: CreditLimits;
 	};
+
+	await connection();
 	const now = new Date();
 
 	let credits: CreditLimits = publicMetadata.credits ?? {
@@ -81,6 +84,7 @@ export async function getCreditStatus(): Promise<CreditStatus | null> {
 		credits?: CreditLimits;
 	};
 
+	await connection();
 	const now = new Date();
 
 	let credits: CreditLimits = publicMetadata.credits ?? {

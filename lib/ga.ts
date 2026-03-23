@@ -1,20 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import ReactGA from "react-ga4";
 
-export default function GoogleAnalyticsInit() {
-	useEffect(() => {
-		const GA_KEY = process.env.GA_KEY;
+let initialized = false;
 
-		if (!GA_KEY) {
-			console.error("Google Analytics key not provided.");
-			return;
+export default function GoogleAnalyticsInit() {
+	const pathname = usePathname();
+
+	useEffect(() => {
+		const key = process.env.NEXT_PUBLIC_GA_KEY;
+		if (!key) return;
+
+		if (!initialized) {
+			ReactGA.initialize(key);
+			initialized = true;
 		}
 
-		ReactGA.initialize(GA_KEY);
-		ReactGA.send("pageview");
-	});
+		ReactGA.send({ hitType: "pageview", page: pathname });
+	}, [pathname]);
 
 	return null;
 }

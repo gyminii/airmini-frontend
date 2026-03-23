@@ -7,27 +7,34 @@ import {
 	MessageActions,
 } from "@/components/ui/custom/prompt/message";
 import { CURRENT_THOUGHT_MODE } from "@/lib/constants/chat";
+import { getFollowUps } from "@/lib/utils/follow-ups";
 import type { ThoughtItem, ThoughtRenderMode, UIPart } from "@/types/chat";
 import {
 	extractTextContent,
 	extractTextSegments,
 	extractThoughtSteps,
+	extractSuggestions,
 } from "@/utils/utils";
 import { CopyIcon } from "@radix-ui/react-icons";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ThoughtRenderer } from "./thought-renderer";
 
 interface AssistantMessageProps {
 	parts: UIPart[];
 	isStreaming: boolean;
+	onRegenerate?: () => void;
+	showFollowUps?: boolean;
+	onSelectFollowUp?: (text: string) => void;
 }
+
 
 function TextContent({ segments }: { segments: string[] }) {
 	if (segments.length === 0) return null;
 
 	return (
-		<div className="bg-muted text-foreground prose rounded-lg border p-4">
-			<Markdown className="space-y-4">{segments.join("")}</Markdown>
+		<div className="bg-accent rounded-xl px-4 py-3 prose prose-sm text-foreground">
+			<Markdown className="space-y-3">{segments.join("")}</Markdown>
 		</div>
 	);
 }
@@ -51,9 +58,9 @@ function renderByMode(
 					{textSegments.map((text, i) => (
 						<div
 							key={i}
-							className="bg-muted text-foreground prose rounded-lg border p-4"
+							className="bg-accent rounded-xl px-4 py-3 prose prose-sm text-foreground"
 						>
-							<Markdown className="space-y-4">{text}</Markdown>
+							<Markdown className="space-y-3">{text}</Markdown>
 						</div>
 					))}
 				</>
@@ -65,9 +72,9 @@ function renderByMode(
 					{textSegments.map((text, i) => (
 						<div
 							key={i}
-							className="bg-muted text-foreground prose rounded-lg border p-4"
+							className="bg-accent rounded-xl px-4 py-3 prose prose-sm text-foreground"
 						>
-							<Markdown className="space-y-4">{text}</Markdown>
+							<Markdown className="space-y-3">{text}</Markdown>
 						</div>
 					))}
 					{thoughtsElement}
@@ -98,10 +105,15 @@ function renderByMode(
 export function AssistantMessage({
 	parts,
 	isStreaming,
+	onRegenerate,
+	showFollowUps,
+	onSelectFollowUp,
 }: AssistantMessageProps) {
 	const textSegments = extractTextSegments(parts);
 	const thoughts = extractThoughtSteps(parts);
 	const textContent = extractTextContent(parts);
+	const backendSuggestions = extractSuggestions(parts);
+	const followUps = getFollowUps(backendSuggestions, thoughts.map((t) => t.phase));
 
 	return (
 		<div className="space-y-3">
@@ -121,7 +133,34 @@ export function AssistantMessage({
 						<CopyIcon />
 					</Button>
 				</MessageAction>
+
+				{onRegenerate && (
+					<MessageAction tooltip="Regenerate" delayDuration={100}>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="rounded-full"
+							onClick={onRegenerate}
+						>
+							<RefreshCw className="size-4" />
+						</Button>
+					</MessageAction>
+				)}
 			</MessageActions>
+
+			{showFollowUps && onSelectFollowUp && followUps.length > 0 && (
+				<div className="mt-2 flex flex-wrap gap-2">
+					{followUps.map((suggestion) => (
+						<button
+							key={suggestion}
+							onClick={() => onSelectFollowUp(suggestion)}
+							className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+						>
+							{suggestion}
+						</button>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }

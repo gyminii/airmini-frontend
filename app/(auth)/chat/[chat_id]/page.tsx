@@ -3,12 +3,14 @@ import { getChatMessages } from "@/lib/actions/chat";
 import { getCreditStatus } from "@/lib/actions/credit-manager";
 import { getTripContext } from "@/lib/actions/trip-context";
 import { convertToUIMessages } from "@/utils/convert-to-messages";
+import { connection } from "next/server";
 
 export default async function ChatPage({
 	params,
 }: {
 	params: Promise<{ chat_id: string }>;
 }) {
+	await connection();
 	const { chat_id } = await params;
 	const [credits, backendMessages, tripContext] = await Promise.all([
 		getCreditStatus(),

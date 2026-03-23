@@ -9,9 +9,11 @@ import {
 	Calendar as CalendarIcon,
 	Users,
 	X,
+	Languages,
+	Check,
+	ChevronsUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
-
 import {
 	Dialog,
 	DialogContent,
@@ -41,8 +43,27 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { TripContext } from "@/types/chat";
+import { COUNTRIES } from "@/lib/data/countries";
+import { AIRLINES } from "@/lib/data/airlines";
+
+function flagEmoji(code: string): string {
+	return code
+		.toUpperCase()
+		.split("")
+		.map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
+		.join("");
+}
 
 const EMPTY_CONTEXT: TripContext = {
 	ui_language: "EN",
@@ -60,20 +81,122 @@ const EMPTY_CONTEXT: TripContext = {
 	purpose: null,
 };
 
-const COUNTRIES = [
-	{ value: "US", label: "United States" },
-	{ value: "KR", label: "South Korea" },
-	{ value: "JP", label: "Japan" },
-	{ value: "CN", label: "China" },
-	{ value: "GB", label: "United Kingdom" },
-	{ value: "CA", label: "Canada" },
-	{ value: "AU", label: "Australia" },
-	{ value: "FR", label: "France" },
-	{ value: "DE", label: "Germany" },
-	{ value: "IN", label: "India" },
-	{ value: "BR", label: "Brazil" },
-	{ value: "MX", label: "Mexico" },
-];
+function CountrySelect({
+	value,
+	onChange,
+	placeholder,
+}: {
+	value: string | null;
+	onChange: (val: string) => void;
+	placeholder: string;
+}) {
+	const [open, setOpen] = React.useState(false);
+	const selected = COUNTRIES.find((c) => c.value === value);
+
+	return (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					role="combobox"
+					className="w-full justify-between font-normal text-xs md:text-sm"
+				>
+					{selected ? (
+						<span className="flex items-center gap-2">
+							<span>{flagEmoji(selected.value)}</span>
+							{selected.label}
+						</span>
+					) : (
+						<span className="text-muted-foreground">{placeholder}</span>
+					)}
+					<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-[280px] p-0" align="start">
+				<Command>
+					<CommandInput placeholder="Search country..." />
+					<CommandList className="max-h-60 overflow-y-auto">
+						<CommandEmpty>No country found.</CommandEmpty>
+						<CommandGroup>
+							{COUNTRIES.map((c) => (
+								<CommandItem
+									key={c.value}
+									value={c.label}
+									onSelect={() => {
+										onChange(c.value);
+										setOpen(false);
+									}}
+								>
+									<span className="mr-2">{flagEmoji(c.value)}</span>
+									{c.label}
+									{value === c.value && (
+										<Check className="ml-auto size-4 opacity-100" />
+									)}
+								</CommandItem>
+							))}
+						</CommandGroup>
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+function AirlineSelect({
+	value,
+	onChange,
+}: {
+	value: string | null;
+	onChange: (val: string) => void;
+}) {
+	const [open, setOpen] = React.useState(false);
+	const selected = AIRLINES.find((a) => a.value === value);
+
+	return (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					role="combobox"
+					className="w-full justify-between font-normal text-sm"
+				>
+					{selected?.label ?? (
+						<span className="text-muted-foreground">Select airline (optional)</span>
+					)}
+					<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent className="w-[320px] p-0" align="start">
+				<Command>
+					<CommandInput placeholder="Search airline..." />
+					<CommandList className="max-h-60 overflow-y-auto">
+						<CommandEmpty>No airline found.</CommandEmpty>
+						<CommandGroup>
+							{AIRLINES.map((a) => (
+								<CommandItem
+									key={a.value}
+									value={a.label}
+									onSelect={() => {
+										onChange(a.value);
+										setOpen(false);
+									}}
+								>
+									<Check
+										className={cn(
+											"mr-2 size-4",
+											value === a.value ? "opacity-100" : "opacity-0"
+										)}
+									/>
+									{a.label}
+								</CommandItem>
+							))}
+						</CommandGroup>
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
+	);
+}
 
 interface TripContextDialogProps {
 	value: TripContext | null;
@@ -83,7 +206,6 @@ interface TripContextDialogProps {
 export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 	const [open, setOpen] = React.useState(false);
 	const [draft, setDraft] = React.useState<TripContext>(value ?? EMPTY_CONTEXT);
-
 	const [departureOpen, setDepartureOpen] = React.useState(false);
 	const [returnOpen, setReturnOpen] = React.useState(false);
 
@@ -117,7 +239,6 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 			draft.origin_country_code ||
 			draft.destination_country_code ||
 			draft.departure_date;
-
 		onChange(hasData ? draft : null);
 		setOpen(false);
 	};
@@ -129,18 +250,12 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 	};
 
 	const handleOpenChange = (isOpen: boolean) => {
-		if (isOpen) {
-			setDraft(value ?? EMPTY_CONTEXT);
-		}
+		if (isOpen) setDraft(value ?? EMPTY_CONTEXT);
 		setOpen(isOpen);
 	};
 
-	// Helper: set string or null
 	const setField = <K extends keyof TripContext>(field: K, val: string) => {
-		setDraft((prev) => ({
-			...prev,
-			[field]: val || null,
-		}));
+		setDraft((prev) => ({ ...prev, [field]: val || null }));
 	};
 
 	const handleDepartureSelect = (date: Date | undefined) => {
@@ -152,13 +267,12 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 			}));
 			return;
 		}
-
 		const iso = date.toISOString().slice(0, 10);
 		setField("departure_date", iso);
-		setDraft((prev) => {
-			if (prev.return_date) return { ...prev, trip_type: "round_trip" };
-			return { ...prev, trip_type: "one_way" };
-		});
+		setDraft((prev) => ({
+			...prev,
+			trip_type: prev.return_date ? "round_trip" : "one_way",
+		}));
 		setDepartureOpen(false);
 	};
 
@@ -172,9 +286,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 			}));
 			return;
 		}
-
 		const iso = date.toISOString().slice(0, 10);
-		setField("return_date", iso);
 		setDraft((prev) => ({
 			...prev,
 			return_date: iso,
@@ -212,7 +324,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 				</TooltipContent>
 			</Tooltip>
 
-			<DialogContent className="sm:max-w-[520px]">
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[540px]">
 				<DialogHeader>
 					<div className="flex items-center gap-2">
 						<div className="rounded-lg bg-primary/10 p-2 text-primary">
@@ -228,53 +340,70 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 				</DialogHeader>
 
 				<div className="mt-4 space-y-4">
+					{/* Response language toggle */}
+					<div className="flex items-center justify-between rounded-lg border p-3">
+						<Label className="flex items-center gap-2 text-sm">
+							<Languages className="size-4 text-muted-foreground" />
+							Response language
+						</Label>
+						<div className="flex overflow-hidden rounded-md border">
+							<button
+								type="button"
+								onClick={() =>
+									setDraft((p) => ({ ...p, answer_language: "EN" }))
+								}
+								className={cn(
+									"px-3 py-1 text-sm transition-colors",
+									draft.answer_language === "EN"
+										? "bg-primary text-primary-foreground"
+										: "hover:bg-muted"
+								)}
+							>
+								EN
+							</button>
+							<button
+								type="button"
+								onClick={() =>
+									setDraft((p) => ({ ...p, answer_language: "KO" }))
+								}
+								className={cn(
+									"px-3 py-1 text-sm transition-colors",
+									draft.answer_language === "KO"
+										? "bg-primary text-primary-foreground"
+										: "hover:bg-muted"
+								)}
+							>
+								한국어
+							</button>
+						</div>
+					</div>
+
 					{/* Nationality */}
 					<div className="space-y-2">
 						<Label className="flex items-center gap-2 text-sm">
 							<Flag className="size-4 text-muted-foreground" />
 							Passport country
 						</Label>
-						<Select
-							value={draft.nationality_country_code ?? ""}
-							onValueChange={(val) => setField("nationality_country_code", val)}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select your passport country" />
-							</SelectTrigger>
-							<SelectContent>
-								{COUNTRIES.map((c) => (
-									<SelectItem key={c.value} value={c.value}>
-										{c.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<CountrySelect
+							value={draft.nationality_country_code}
+							onChange={(val) => setField("nationality_country_code", val)}
+							placeholder="Select your passport country"
+						/>
 					</div>
 
-					{/* Origin & Destination grouped with country + city/airport */}
+					{/* Origin & Destination */}
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						{/* Origin */}
 						<div className="space-y-3">
 							<Label className="flex items-center gap-2 text-sm">
 								<MapPin className="size-4 text-muted-foreground" />
 								From
 							</Label>
 							<div className="space-y-2">
-								<Select
-									value={draft.origin_country_code ?? ""}
-									onValueChange={(val) => setField("origin_country_code", val)}
-								>
-									<SelectTrigger className="w-full text-xs md:text-sm">
-										<SelectValue placeholder="Departure country (optional)" />
-									</SelectTrigger>
-									<SelectContent>
-										{COUNTRIES.map((c) => (
-											<SelectItem key={c.value} value={c.value}>
-												{c.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<CountrySelect
+									value={draft.origin_country_code}
+									onChange={(val) => setField("origin_country_code", val)}
+									placeholder="Departure country"
+								/>
 								<Input
 									placeholder="City or airport (e.g. Seoul / ICN)"
 									value={draft.origin_city_or_airport ?? ""}
@@ -284,31 +413,17 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 								/>
 							</div>
 						</div>
-
-						{/* Destination */}
 						<div className="space-y-3">
 							<Label className="flex items-center gap-2 text-sm">
 								<MapPinned className="size-4 text-muted-foreground" />
 								To
 							</Label>
 							<div className="space-y-2">
-								<Select
-									value={draft.destination_country_code ?? ""}
-									onValueChange={(val) =>
-										setField("destination_country_code", val)
-									}
-								>
-									<SelectTrigger className="w-full text-xs md:text-sm">
-										<SelectValue placeholder="Arrival country (optional)" />
-									</SelectTrigger>
-									<SelectContent>
-										{COUNTRIES.map((c) => (
-											<SelectItem key={c.value} value={c.value}>
-												{c.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<CountrySelect
+									value={draft.destination_country_code}
+									onChange={(val) => setField("destination_country_code", val)}
+									placeholder="Arrival country"
+								/>
 								<Input
 									placeholder="City or airport (e.g. Vancouver / YVR)"
 									value={draft.destination_city_or_airport ?? ""}
@@ -320,7 +435,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 						</div>
 					</div>
 
-					{/* Dates with shadcn calendar */}
+					{/* Dates */}
 					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label className="flex items-center gap-2 text-sm">
@@ -336,9 +451,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 										{departureDate ? (
 											format(departureDate, "PPP")
 										) : (
-											<span className="text-muted-foreground">
-												Pick a departure date
-											</span>
+											<span className="text-muted-foreground">Pick a date</span>
 										)}
 										<CalendarIcon className="ml-2 size-4 opacity-60" />
 									</Button>
@@ -353,7 +466,6 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 								</PopoverContent>
 							</Popover>
 						</div>
-
 						<div className="space-y-2">
 							<Label className="flex items-center gap-2 text-sm">
 								<CalendarIcon className="size-4 text-muted-foreground" />
@@ -369,7 +481,7 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 											format(returnDate, "PPP")
 										) : (
 											<span className="text-muted-foreground">
-												Pick a return date (optional)
+												Return date (optional)
 											</span>
 										)}
 										<CalendarIcon className="ml-2 size-4 opacity-60" />
@@ -384,6 +496,42 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 									/>
 								</PopoverContent>
 							</Popover>
+						</div>
+					</div>
+
+					{/* Airline + Cabin */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+						<div className="space-y-2">
+							<Label className="flex items-center gap-2 text-sm">
+								<Plane className="size-4 text-muted-foreground" />
+								Airline
+							</Label>
+							<AirlineSelect
+								value={draft.airline_code}
+								onChange={(val) => setField("airline_code", val)}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label className="text-sm">Cabin class</Label>
+							<Select
+								value={draft.cabin ?? ""}
+								onValueChange={(val) =>
+									setDraft((prev) => ({
+										...prev,
+										cabin: (val as TripContext["cabin"]) || null,
+									}))
+								}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Cabin (optional)" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="economy">Economy</SelectItem>
+									<SelectItem value="premium">Premium Economy</SelectItem>
+									<SelectItem value="business">Business</SelectItem>
+									<SelectItem value="first">First Class</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 					</div>
 
@@ -433,7 +581,6 @@ export function TripContextDialog({ value, onChange }: TripContextDialogProps) {
 	);
 }
 
-// Badge to show active context in input area
 export function TripContextBadge({
 	context,
 	onClear,

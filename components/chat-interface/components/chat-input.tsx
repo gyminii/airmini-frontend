@@ -21,8 +21,8 @@ interface ChatInputProps {
 	isGuest: boolean;
 	resetAt: string | null;
 	remainingCredits: number;
+	guestLimit: number;
 	tripContext: TripContext | null;
-
 	onTripContextChange: (context: TripContext | null) => void;
 }
 
@@ -34,6 +34,7 @@ export function ChatInput({
 	hasCredits,
 	isGuest,
 	remainingCredits,
+	guestLimit,
 	tripContext,
 	resetAt,
 	onTripContextChange,
@@ -49,14 +50,18 @@ export function ChatInput({
 		return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 	};
 	return (
-		<div className="bg-primary/10 w-full rounded-2xl p-1 pt-0">
-			<div className="flex gap-2 px-4 py-2 text-xs">
+		<div className="bg-muted w-full rounded-2xl p-1 pt-0 shadow-sm">
+			<div className="flex gap-2 px-4 py-1.5 text-xs text-muted-foreground/80">
 				{isGuest ? (
-					<>Sign up to save your chats and track usage</>
+					remainingCredits > 0 ? (
+						<>{remainingCredits} of {guestLimit} free messages remaining &mdash; sign in for more</>
+					) : (
+						<>Free limit reached{resetAt ? <> &mdash; resets at {formatResetTime(resetAt)}</> : null} &mdash; sign in for more messages</>
+					)
 				) : remainingCredits > 0 ? (
 					<>{remainingCredits} messages remaining this window</>
 				) : (
-					<>Limit reached. Resets at {resetAt && formatResetTime(resetAt)}</>
+					<>Limit reached &mdash; resets at {resetAt && formatResetTime(resetAt)}</>
 				)}
 			</div>
 
@@ -81,11 +86,11 @@ export function ChatInput({
 							? "Ask me anything..."
 							: "You've hit your current limit. Please wait for it to reset."
 					}
-					className="min-h-auto p-4"
+					className="min-h-auto px-4 py-3 text-sm"
 					disabled={!hasCredits || isStreaming}
 				/>
 
-				<PromptInputActions className="flex items-center justify-end gap-2 p-3">
+				<PromptInputActions className="flex items-center justify-end gap-2 px-3 pb-2 pt-1">
 					<div className="flex items-center gap-2">
 						<TooltipProvider>
 							<TripContextDialog

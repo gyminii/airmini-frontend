@@ -15,6 +15,8 @@ interface MessageListProps {
 	isFirstResponse: boolean;
 	containerRef: RefObject<HTMLDivElement | null>;
 	bottomRef: RefObject<HTMLDivElement | null>;
+	onRegenerate: () => void;
+	onSelectFollowUp: (text: string) => void;
 }
 
 export function MessageList({
@@ -23,6 +25,8 @@ export function MessageList({
 	isFirstResponse,
 	containerRef,
 	bottomRef,
+	onRegenerate,
+	onSelectFollowUp,
 }: MessageListProps) {
 	const showStreamingLoader =
 		isStreaming &&
@@ -30,7 +34,7 @@ export function MessageList({
 
 	return (
 		<ChatContainer
-			className={cn("relative w-full flex-1 space-y-4 pe-2 pt-10 md:pt-0", {
+			className={cn("relative w-full flex-1 space-y-3 pe-2 pt-10 md:pt-0", {
 				hidden: isFirstResponse,
 			})}
 			ref={containerRef}
@@ -52,7 +56,7 @@ export function MessageList({
 						className={isAssistant ? "justify-start" : "justify-end"}
 					>
 						<div
-							className={cn("max-w-[85%] flex-1 sm:max-w-[75%]", {
+							className={cn("group max-w-[85%] flex-1 sm:max-w-[75%]", {
 								"justify-end text-end": !isAssistant,
 							})}
 						>
@@ -60,9 +64,12 @@ export function MessageList({
 								<AssistantMessage
 									parts={message.parts as UIPart[]}
 									isStreaming={isMessageStreaming}
+									onRegenerate={isLastMessage ? onRegenerate : undefined}
+									showFollowUps={isLastMessage && !isStreaming}
+									onSelectFollowUp={onSelectFollowUp}
 								/>
 							) : (
-								<MessageContent className="bg-primary text-primary-foreground inline-flex text-start">
+								<MessageContent className="bg-primary text-primary-foreground inline-flex rounded-2xl px-4 py-2.5 text-sm text-start">
 									{textContent}
 								</MessageContent>
 							)}

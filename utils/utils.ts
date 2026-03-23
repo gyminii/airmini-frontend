@@ -4,6 +4,7 @@ import {
 	ThoughtItem,
 	ThoughtPart,
 	ThoughtPhase,
+	SuggestionsPart,
 } from "@/types/chat";
 import { THOUGHT_PHASE_ICONS } from "@/lib/constants/chat";
 
@@ -35,6 +36,16 @@ export function extractTextSegments(parts: UIPart[]): string[] {
  */
 export function getThoughtIcon(phase: ThoughtPhase): React.ReactNode {
 	return THOUGHT_PHASE_ICONS[phase] || THOUGHT_PHASE_ICONS.other;
+}
+
+/**
+ * Extract backend-generated follow-up suggestions from message parts
+ */
+export function extractSuggestions(parts: UIPart[]): string[] {
+	const part = parts.findLast(
+		(p): p is SuggestionsPart => p.type === "data-suggestions"
+	);
+	return part?.data?.suggestions ?? [];
 }
 
 /**
